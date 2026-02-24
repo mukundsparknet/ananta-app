@@ -420,6 +420,19 @@ public class AppUserController {
                 }
             }
 
+            // Handle cover image
+            if (StringUtils.hasText(request.getCoverImage())) {
+                String coverToSave = request.getCoverImage();
+                if (coverToSave.startsWith("data:image")) {
+                    String savedPath = saveBase64Image(coverToSave, "cover", normalizedUserId);
+                    if (StringUtils.hasText(savedPath)) {
+                        user.setCoverImage(savedPath);
+                    }
+                } else if (coverToSave.startsWith("/uploads/") || coverToSave.startsWith("http")) {
+                    user.setCoverImage(coverToSave);
+                }
+            }
+
             userRepository.save(user);
             entityManager.flush();
 

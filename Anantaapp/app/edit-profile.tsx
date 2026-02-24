@@ -35,6 +35,7 @@ export default function EditProfileScreen() {
   const { profileData, updateProfile } = useProfile();
   const { isDark } = useTheme();
   const [profileImage, setProfileImage] = useState(profileData.profilePhoto || profileData.profileImage);
+  const [coverImage, setCoverImage] = useState(profileData.headerBackground);
   const [name, setName] = useState(profileData.name);
   const [bio, setBio] = useState(profileData.bio);
   const [location, setLocation] = useState(profileData.location);
@@ -79,6 +80,7 @@ export default function EditProfileScreen() {
       const profileUri = resolveProfileUri(user.profileImage);
       const coverUri = resolveProfileUri(user.coverImage);
       setProfileImage(profileUri);
+      setCoverImage(coverUri);
       setName(user.fullName || '');
       setUserName(user.username || '');
       setBio(user.bio || '');
@@ -165,6 +167,20 @@ export default function EditProfileScreen() {
     }
   };
 
+  const pickCoverImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.7,
+      base64: false,
+    });
+
+    if (!result.canceled) {
+      setCoverImage(result.assets[0].uri);
+    }
+  };
+
   const saveProfile = async () => {
     if (!userId) {
       Alert.alert('Error', 'User information not found, please login again');
@@ -173,22 +189,41 @@ export default function EditProfileScreen() {
     try {
       console.log('Starting profile save...');
       console.log('Profile image URI:', profileImage);
+      console.log('Cover image URI:', coverImage);
       
       let imageToSend: string | null = profileImage;
-      // Only convert to base64 if it's a local file or blob
+      let coverToSend: string | null = coverImage;
+      
+      // Convert profile image to base64 if needed
       if (
         profileImage &&
         !profileImage.startsWith('http') &&
         !profileImage.startsWith('data:') &&
         !profileImage.startsWith('/uploads/')
       ) {
-        console.log('Converting image to base64...');
+        console.log('Converting profile image to base64...');
         imageToSend = await toBase64(profileImage);
-        console.log('Base64 conversion result:', imageToSend ? `${imageToSend.substring(0, 50)}...` : 'null');
+        console.log('Profile base64 conversion result:', imageToSend ? `${imageToSend.substring(0, 50)}...` : 'null');
         
-        // Limit base64 size to 1MB
         if (imageToSend && imageToSend.length > 1000000) {
-          Alert.alert('Error', 'Image too large. Please select a smaller image.');
+          Alert.alert('Error', 'Profile image too large. Please select a smaller image.');
+          return;
+        }
+      }
+      
+      // Convert cover image to base64 if needed
+      if (
+        coverImage &&
+        !coverImage.startsWith('http') &&
+        !coverImage.startsWith('data:') &&
+        !coverImage.startsWith('/uploads/')
+      ) {
+        console.log('Converting cover image to base64...');
+        coverToSend = await toBase64(coverImage);
+        console.log('Cover base64 conversion result:', coverToSend ? `${coverToSend.substring(0, 50)}...` : 'null');
+        
+        if (coverToSend && coverToSend.length > 1000000) {
+          Alert.alert('Error', 'Cover image too large. Please select a smaller image.');
           return;
         }
       }
@@ -209,12 +244,19 @@ export default function EditProfileScreen() {
         pinCode: pinCode || '',
       };
       
-      // Include image if it's base64
+      // Include images if they're base64
       if (imageToSend && imageToSend.startsWith('data:')) {
-        console.log('Adding image to payload, size:', imageToSend.length);
+        console.log('Adding profile image to payload, size:', imageToSend.length);
         payload.profileImage = imageToSend;
       } else {
-        console.log('No base64 image to send');
+        console.log('No base64 profile image to send');
+      }
+      
+      if (coverToSend && coverToSend.startsWith('data:')) {
+        console.log('Adding cover image to payload, size:', coverToSend.length);
+        payload.coverImage = coverToSend;
+      } else {
+        console.log('No base64 cover image to send');
       }
       
       console.log('Sending payload with fields:', Object.keys(payload));
@@ -239,6 +281,7 @@ export default function EditProfileScreen() {
       console.log('Save successful:', result);
       
       const resolvedUri = resolveProfileUri(imageToSend) || profileImage;
+      const resolvedCoverUri = resolveProfileUri(coverToSend) || coverImage;
       updateProfile({
         name: fullName,
         UserName: userName,
@@ -253,6 +296,7 @@ export default function EditProfileScreen() {
         pinCode,
         profileImage: resolvedUri || profileImage,
         profilePhoto: resolvedUri || profileImage,
+        headerBackground: resolvedCoverUri || coverImage,
       });
       
       Alert.alert('Success', 'Profile updated successfully');
@@ -283,6 +327,24 @@ export default function EditProfileScreen() {
       </LinearGradient>
       
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        {/* Cover Image */}
+        <View style={[styles.coverImageSection, { backgroundColor: isDark ? '#2a2a2a' : 'white' }]}>
+          <View style={styles.coverImageContainer}>
+            {coverImage && (coverImage.startsWith('http') || coverImage.startsWith('data:') || coverImage.startsWith('/uploads/') || coverImage.startsWith('blob:')) ? (
+              <Image source={{ uri: coverImage }} style={styles.coverImage} resizeMode="cover" />
+            ) : (
+              <LinearGradient
+                colors={isDark ? ['#f7c14d', '#ffb300'] : ['#127d96', '#15a3c7']}
+                style={styles.coverImage}
+              />
+            )}
+            <TouchableOpacity style={styles.editCoverButton} onPress={pickCoverImage}>
+              <Ionicons name="camera" size={16} color="white" />
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.changePhotoText, { color: isDark ? '#ccc' : '#666' }]}>Tap to change cover photo</Text>
+        </View>
+        
         {/* Profile Image */}
         <View style={[styles.profileImageSection, { backgroundColor: isDark ? '#2a2a2a' : 'white' }]}>
           <View style={styles.profileImageContainer}>
@@ -507,6 +569,52 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
+  },
+  coverImageSection: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  coverImageContainer: {
+    position: 'relative',
+    marginBottom: 10,
+    width: '90%',
+  },
+  coverImage: {
+    width: '100%',
+    height: 150,
+    borderRadius: 15,
+  },
+  editCoverButton: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#127d96',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   formContainer: {
     paddingHorizontal: 20,

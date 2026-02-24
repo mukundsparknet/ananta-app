@@ -51,6 +51,10 @@ public class User {
     @org.hibernate.annotations.JdbcTypeCode(java.sql.Types.VARCHAR)
     private String profileImage;
 
+    @Column(name = "cover_image")
+    @org.hibernate.annotations.JdbcTypeCode(java.sql.Types.VARCHAR)
+    private String coverImage;
+
     @Column(name = "is_blocked")
     private boolean isBlocked = false;
 
