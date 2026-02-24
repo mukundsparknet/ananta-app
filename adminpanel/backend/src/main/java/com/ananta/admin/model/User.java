@@ -47,11 +47,9 @@ public class User {
 
     private String location;
 
-    @Column(name = "profile_image", columnDefinition = "TEXT")
+    @Column(name = "profile_image")
+    @org.hibernate.annotations.JdbcTypeCode(java.sql.Types.VARCHAR)
     private String profileImage;
-
-    @Column(name = "cover_image", columnDefinition = "TEXT")
-    private String coverImage;
 
     @Column(name = "is_blocked")
     private boolean isBlocked = false;

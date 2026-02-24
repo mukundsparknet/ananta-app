@@ -365,134 +365,71 @@ public class AppUserController {
     @Transactional
     public ResponseEntity<?> updateProfile(@RequestBody UpdateProfileRequest request) {
         try {
-            System.out.println("=== Profile Update Request ===");
-            System.out.println("UserId: " + request.getUserId());
-            System.out.println("Username: " + request.getUsername());
-            System.out.println("FullName: " + request.getFullName());
+            System.out.println("POST /api/app/profile called with userId: " + request.getUserId());
             
             String normalizedUserId = request.getUserId() != null ? request.getUserId().trim() : "";
             if (!StringUtils.hasText(normalizedUserId)) {
                 return ResponseEntity.badRequest().body(new MessageResponse("UserId is required"));
             }
 
-            String compactUserId = normalizedUserId.replaceAll("[^A-Za-z0-9]", "");
-            Optional<User> userOpt = userRepository.findByUserId(normalizedUserId);
-            if (userOpt.isEmpty()) {
-                userOpt = userRepository.findByUserIdTrimmed(normalizedUserId);
-            }
-            if (userOpt.isEmpty() && StringUtils.hasText(compactUserId)) {
-                userOpt = userRepository.findByUserIdNormalized(compactUserId);
-            }
-            if (userOpt.isEmpty() && StringUtils.hasText(compactUserId)) {
-                userOpt = userRepository.findFirstByUserIdLikeNormalized(compactUserId);
-            }
+            // Use native query to avoid LOB issues
+            int updated = entityManager.createNativeQuery(
+                "UPDATE users SET " +
+                "username = COALESCE(:username, username), " +
+                "full_name = COALESCE(:fullName, full_name), " +
+                "bio = :bio, " +
+                "location = :location, " +
+                "gender = :gender, " +
+                "birthday = :birthday, " +
+                "address_line1 = :addressLine1, " +
+                "city = :city, " +
+                "state = :state, " +
+                "country = :country, " +
+                "pin_code = :pinCode, " +
+                "updated_at = CURRENT_TIMESTAMP " +
+                "WHERE user_id = :userId")
+                .setParameter("username", StringUtils.hasText(request.getUsername()) ? request.getUsername().trim() : null)
+                .setParameter("fullName", StringUtils.hasText(request.getFullName()) ? request.getFullName().trim() : null)
+                .setParameter("bio", request.getBio())
+                .setParameter("location", request.getLocation())
+                .setParameter("gender", request.getGender())
+                .setParameter("birthday", request.getBirthday())
+                .setParameter("addressLine1", request.getAddressLine1())
+                .setParameter("city", request.getCity())
+                .setParameter("state", request.getState())
+                .setParameter("country", request.getCountry())
+                .setParameter("pinCode", request.getPinCode())
+                .setParameter("userId", normalizedUserId)
+                .executeUpdate();
 
-            if (userOpt.isEmpty()) {
-                System.out.println("ERROR: User not found");
+            if (updated == 0) {
                 return ResponseEntity.status(404).body(new MessageResponse("User not found"));
             }
 
-            User user = userOpt.get();
-            System.out.println("Found user: " + user.getUserId());
-
-            // Update basic fields
-            if (StringUtils.hasText(request.getUsername())) {
-                user.setUsername(request.getUsername().trim());
-            }
-            if (StringUtils.hasText(request.getFullName())) {
-                user.setFullName(request.getFullName().trim());
-            }
-            if (request.getBio() != null) {
-                user.setBio(request.getBio());
-            }
-            if (request.getLocation() != null) {
-                user.setLocation(request.getLocation());
-            }
-            if (request.getGender() != null) {
-                user.setGender(request.getGender());
-            }
-            if (request.getBirthday() != null) {
-                user.setBirthday(request.getBirthday());
-            }
-            if (request.getAddressLine1() != null) {
-                user.setAddressLine1(request.getAddressLine1());
-            }
-            if (request.getCity() != null) {
-                user.setCity(request.getCity());
-            }
-            if (request.getState() != null) {
-                user.setState(request.getState());
-            }
-            if (request.getCountry() != null) {
-                user.setCountry(request.getCountry());
-            }
-            if (request.getPinCode() != null) {
-                user.setPinCode(request.getPinCode());
-            }
-
-            // Save without image first
-            userRepository.save(user);
-            System.out.println("=== Profile Updated Successfully (without image) ===");
-
-            // Try to update image separately
+            // Handle profile image separately
             if (StringUtils.hasText(request.getProfileImage())) {
-                try {
-                    String imageToSave = request.getProfileImage();
-                    if (imageToSave.startsWith("data:image")) {
-                        String savedPath = saveBase64Image(imageToSave, "profile", user.getUserId());
-                        if (StringUtils.hasText(savedPath)) {
-                            // Update only image using native query to avoid LOB issues
-                            entityManager.createNativeQuery(
-                                "UPDATE users SET profile_image = :img WHERE user_id = :uid")
-                                .setParameter("img", savedPath)
-                                .setParameter("uid", user.getUserId())
-                                .executeUpdate();
-                            System.out.println("Image updated: " + savedPath);
-                        }
-                    } else if (imageToSave.startsWith("/uploads/") || imageToSave.startsWith("http")) {
+                String imageToSave = request.getProfileImage();
+                if (imageToSave.startsWith("data:image")) {
+                    String savedPath = saveBase64Image(imageToSave, "profile", normalizedUserId);
+                    if (StringUtils.hasText(savedPath)) {
                         entityManager.createNativeQuery(
                             "UPDATE users SET profile_image = :img WHERE user_id = :uid")
-                            .setParameter("img", imageToSave)
-                            .setParameter("uid", user.getUserId())
+                            .setParameter("img", savedPath)
+                            .setParameter("uid", normalizedUserId)
                             .executeUpdate();
-                        System.out.println("Image path updated: " + imageToSave);
                     }
-                } catch (Exception e) {
-                    System.out.println("Image update failed (non-critical): " + e.getMessage());
-                }
-            }
-
-            // Update cover image separately
-            if (StringUtils.hasText(request.getCoverImage())) {
-                try {
-                    String coverToSave = request.getCoverImage();
-                    if (coverToSave.startsWith("data:image")) {
-                        String savedPath = saveBase64Image(coverToSave, "cover", user.getUserId());
-                        if (StringUtils.hasText(savedPath)) {
-                            entityManager.createNativeQuery(
-                                "UPDATE users SET cover_image = :img WHERE user_id = :uid")
-                                .setParameter("img", savedPath)
-                                .setParameter("uid", user.getUserId())
-                                .executeUpdate();
-                            System.out.println("Cover image updated: " + savedPath);
-                        }
-                    } else if (coverToSave.startsWith("/uploads/") || coverToSave.startsWith("http")) {
-                        entityManager.createNativeQuery(
-                            "UPDATE users SET cover_image = :img WHERE user_id = :uid")
-                            .setParameter("img", coverToSave)
-                            .setParameter("uid", user.getUserId())
-                            .executeUpdate();
-                        System.out.println("Cover image path updated: " + coverToSave);
-                    }
-                } catch (Exception e) {
-                    System.out.println("Cover image update failed (non-critical): " + e.getMessage());
+                } else if (imageToSave.startsWith("/uploads/") || imageToSave.startsWith("http")) {
+                    entityManager.createNativeQuery(
+                        "UPDATE users SET profile_image = :img WHERE user_id = :uid")
+                        .setParameter("img", imageToSave)
+                        .setParameter("uid", normalizedUserId)
+                        .executeUpdate();
                 }
             }
 
             return ResponseEntity.ok(new MessageResponse("Profile updated successfully"));
         } catch (Exception e) {
-            System.out.println("=== ERROR ===");
-            System.out.println("Message: " + e.getMessage());
+            System.out.println("ERROR: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(500).body(new MessageResponse("Server error: " + e.getMessage()));
         }
@@ -545,7 +482,7 @@ public class AppUserController {
         if (user == null && StringUtils.hasText(normalizedUserId)) {
             try {
                 List<?> rows = entityManager.createNativeQuery(
-                                "select user_id, username, email, phone, full_name, gender, birthday, bio, address_line1, city, state, country, pin_code, location, profile_image, cover_image, is_blocked, is_banned " +
+                                "select user_id, username, email, phone, full_name, gender, birthday, bio, address_line1, city, state, country, pin_code, location, profile_image, is_blocked, is_banned " +
                                         "from users where user_id = :id limit 1")
                         .setParameter("id", normalizedUserId)
                         .getResultList();
@@ -567,12 +504,11 @@ public class AppUserController {
                     u.setPinCode(r[12] != null ? r[12].toString() : null);
                     u.setLocation(r[13] != null ? r[13].toString() : null);
                     u.setProfileImage(r[14] != null ? r[14].toString() : null);
-                    u.setCoverImage(r[15] != null ? r[15].toString() : null);
-                    if (r[16] instanceof Boolean) {
-                        u.setBlocked((Boolean) r[16]);
+                    if (r[15] instanceof Boolean) {
+                        u.setBlocked((Boolean) r[15]);
                     }
-                    if (r[17] instanceof Boolean) {
-                        u.setBanned((Boolean) r[17]);
+                    if (r[16] instanceof Boolean) {
+                        u.setBanned((Boolean) r[16]);
                     }
                     user = u;
                 }

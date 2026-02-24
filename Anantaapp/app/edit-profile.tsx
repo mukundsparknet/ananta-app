@@ -113,25 +113,40 @@ export default function EditProfileScreen() {
   const toBase64 = async (uri: string | null) => {
     if (!uri) return null;
     try {
-      if (Platform.OS === 'web') {
-        if (uri.startsWith('data:')) {
-          return uri;
-        }
-        const res = await fetch(uri);
-        const blob = await res.blob();
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(blob);
-        });
-        return dataUrl;
+      // If already base64 or http URL, return as is
+      if (uri.startsWith('data:')) {
+        return uri;
       }
+      if (uri.startsWith('http')) {
+        return uri;
+      }
+      if (uri.startsWith('/uploads/')) {
+        return uri;
+      }
+      
+      // For web platform with blob URLs
+      if (Platform.OS === 'web') {
+        if (uri.startsWith('blob:')) {
+          const res = await fetch(uri);
+          const blob = await res.blob();
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(blob);
+          });
+          return dataUrl;
+        }
+        return uri;
+      }
+      
+      // For native platform
       const base64 = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
       return `data:image/jpeg;base64,${base64}`;
-    } catch {
+    } catch (error) {
+      console.error('toBase64 error:', error);
       return null;
     }
   };
@@ -141,7 +156,8 @@ export default function EditProfileScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 1,
+      quality: 0.5,
+      base64: false,
     });
 
     if (!result.canceled) {
@@ -156,6 +172,7 @@ export default function EditProfileScreen() {
     }
     try {
       let imageToSend: string | null = profileImage;
+      // Only convert to base64 if it's a local file or blob
       if (
         profileImage &&
         !profileImage.startsWith('http') &&
@@ -163,23 +180,36 @@ export default function EditProfileScreen() {
         !profileImage.startsWith('/uploads/')
       ) {
         imageToSend = await toBase64(profileImage);
+        // Limit base64 size to 1MB
+        if (imageToSend && imageToSend.length > 1000000) {
+          Alert.alert('Error', 'Image too large. Please select a smaller image.');
+          return;
+        }
       }
       const fullName = name && name.trim().length > 0 ? name.trim() : userName.trim();
-      const payload = {
+      const payload: any = {
         userId,
         username: userName.trim(),
         fullName,
-        bio,
-        location,
-        gender,
-        birthday,
-        addressLine1,
-        city,
-        state,
-        country,
-        pinCode,
-        profileImage: imageToSend,
+        bio: bio || '',
+        location: location || '',
+        gender: gender || '',
+        birthday: birthday || '',
+        addressLine1: addressLine1 || '',
+        city: city || '',
+        state: state || '',
+        country: country || '',
+        pinCode: pinCode || '',
       };
+      // Skip image for now - backend has issues
+      // if (imageToSend && imageToSend.startsWith('data:')) {
+      //   payload.profileImage = imageToSend;
+      // }
+      console.log('Sending payload:', { ...payload, profileImage: imageToSend ? `${imageToSend.substring(0, 50)}...` : null });
+      console.log('Full payload fields:', Object.keys(payload));
+      console.log('UserId:', payload.userId);
+      console.log('Username:', payload.username);
+      console.log('FullName:', payload.fullName);
       const response = await fetch(`${ENV.API_BASE_URL}/api/app/profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -188,6 +218,7 @@ export default function EditProfileScreen() {
       if (!response.ok) {
         const err = await response.json().catch(() => null);
         const message = err?.message || 'Failed to save profile';
+        console.error('Server error:', err);
         Alert.alert('Error', message);
         return;
       }
@@ -236,7 +267,7 @@ export default function EditProfileScreen() {
         {/* Profile Image */}
         <View style={[styles.profileImageSection, { backgroundColor: isDark ? '#2a2a2a' : 'white' }]}>
           <View style={styles.profileImageContainer}>
-            {profileImage ? (
+            {profileImage && (profileImage.startsWith('http') || profileImage.startsWith('data:') || profileImage.startsWith('/uploads/')) ? (
               <Image source={{ uri: profileImage }} style={styles.profileImage} />
             ) : (
               <View style={[styles.profileImage, { backgroundColor: isDark ? '#f7c14d' : '#127d96', justifyContent: 'center', alignItems: 'center' }]}>
