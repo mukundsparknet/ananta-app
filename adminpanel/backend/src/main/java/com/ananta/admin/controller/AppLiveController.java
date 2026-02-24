@@ -252,26 +252,6 @@ public class AppLiveController {
         return ResponseEntity.ok(items);
     }
 
-    @DeleteMapping("/cleanup")
-    public ResponseEntity<?> cleanupOldSessions() {
-        try {
-            List<LiveSession> allSessions = liveSessionRepository.findAll();
-            int deleted = 0;
-            for (LiveSession session : allSessions) {
-                if (session.getEndedAt() != null || "ENDED".equalsIgnoreCase(session.getStatus())) {
-                    liveSessionRepository.delete(session);
-                    deleted++;
-                }
-            }
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Cleanup completed");
-            response.put("deleted", deleted);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(Collections.singletonMap("message", "Cleanup failed: " + e.getMessage()));
-        }
-    }
-
     private String asString(Object value) {
         return value == null ? null : value.toString();
     }
