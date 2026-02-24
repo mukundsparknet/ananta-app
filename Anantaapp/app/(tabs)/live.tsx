@@ -18,7 +18,7 @@ export default function LiveScreen() {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [followedSessionKeys, setFollowedSessionKeys] = useState<string[]>([]);
 
-  const API_BASE = 'http://localhost:8082';
+  const API_BASE = 'https://ecofuelglobal.com';
 
   const handleStartLive = async () => {
     let userId: string | null = null;

@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
+import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 
 const ProfileContext = createContext();
 
@@ -33,7 +35,11 @@ export const ProfileProvider = ({ children }) => {
 
   const logout = () => {
     setProfileData(defaultProfile);
-    // Add any other cleanup here (e.g. AsyncStorage.clear())
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.localStorage.removeItem('userId');
+    } else {
+      SecureStore.deleteItemAsync('userId').catch(() => {});
+    }
   };
 
   return (

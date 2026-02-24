@@ -8,6 +8,7 @@ import com.ananta.admin.payload.MessageResponse;
 import com.ananta.admin.payload.OtpVerifyRequest;
 import com.ananta.admin.payload.OtpVerifyResponse;
 import com.ananta.admin.payload.RegisterRequest;
+import com.ananta.admin.payload.UpdateProfileRequest;
 import com.ananta.admin.repository.KYCRepository;
 import com.ananta.admin.repository.UserRepository;
 import com.ananta.admin.repository.FollowRepository;
@@ -19,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -347,6 +349,79 @@ public class AppUserController {
         } catch (Exception e) {
             return ResponseEntity.ok(new KycStatusResponse(userId, "NONE"));
         }
+    }
+
+    @PostMapping("/profile")
+    public ResponseEntity<?> updateProfile(@RequestBody UpdateProfileRequest request) {
+        System.out.println("POST /api/app/profile called with userId: " + (request.getUserId() != null ? request.getUserId() : "null"));
+        String normalizedUserId = request.getUserId() != null ? request.getUserId().trim() : "";
+        if (!StringUtils.hasText(normalizedUserId)) {
+            return ResponseEntity.badRequest().body(new MessageResponse("UserId is required"));
+        }
+
+        String compactUserId = normalizedUserId.replaceAll("[^A-Za-z0-9]", "");
+        Optional<User> userOpt = userRepository.findByUserId(normalizedUserId);
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByUserIdTrimmed(normalizedUserId);
+        }
+        if (userOpt.isEmpty() && StringUtils.hasText(compactUserId)) {
+            userOpt = userRepository.findByUserIdNormalized(compactUserId);
+        }
+        if (userOpt.isEmpty() && StringUtils.hasText(compactUserId)) {
+            userOpt = userRepository.findFirstByUserIdLikeNormalized(compactUserId);
+        }
+
+        User user = userOpt.orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (StringUtils.hasText(request.getUsername())) {
+            user.setUsername(request.getUsername().trim());
+        }
+        if (StringUtils.hasText(request.getFullName())) {
+            user.setFullName(request.getFullName().trim());
+        }
+        if (request.getBio() != null) {
+            user.setBio(request.getBio());
+        }
+        if (request.getLocation() != null) {
+            user.setLocation(request.getLocation());
+        }
+        if (request.getGender() != null) {
+            user.setGender(request.getGender());
+        }
+        if (request.getBirthday() != null) {
+            user.setBirthday(request.getBirthday());
+        }
+        if (request.getAddressLine1() != null) {
+            user.setAddressLine1(request.getAddressLine1());
+        }
+        if (request.getCity() != null) {
+            user.setCity(request.getCity());
+        }
+        if (request.getState() != null) {
+            user.setState(request.getState());
+        }
+        if (request.getCountry() != null) {
+            user.setCountry(request.getCountry());
+        }
+        if (request.getPinCode() != null) {
+            user.setPinCode(request.getPinCode());
+        }
+
+        String profileImagePath = saveBase64Image(request.getProfileImage(), "profile", user.getUserId());
+        if (StringUtils.hasText(profileImagePath)) {
+            user.setProfileImage(profileImagePath);
+        } else if (StringUtils.hasText(request.getProfileImage())) {
+            user.setProfileImage(request.getProfileImage());
+        }
+
+        userRepository.save(user);
+
+        return ResponseEntity.ok(new MessageResponse("Profile updated successfully"));
+    }
+
+    @RequestMapping(value = "/profile", method = RequestMethod.OPTIONS)
+    public ResponseEntity<?> handleProfileOptions() {
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/profile/{userId}")

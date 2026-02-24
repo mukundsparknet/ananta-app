@@ -2,7 +2,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState, useRef } from 'react';
-import { Image, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, StatusBar, Dimensions, Animated, Alert } from 'react-native';
+import { Image, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, StatusBar, Dimensions, Animated, Alert, PermissionsAndroid } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -147,9 +147,28 @@ export default function AudioLiveScreen() {
     };
   }, []);
 
+  const requestAudioPermission = async () => {
+    if (Platform.OS !== 'android') {
+      return true;
+    }
+    try {
+      const result = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+      );
+      return result === PermissionsAndroid.RESULTS.GRANTED;
+    } catch {
+      return false;
+    }
+  };
+
   const initAgora = async () => {
     if (!appId || !token || !channelName) return;
     try {
+      const hasPermission = await requestAudioPermission();
+      if (!hasPermission) {
+        Alert.alert('Permission required', 'Microphone permission is needed for live audio.');
+        return;
+      }
       const engine = await createAgoraEngine(appId);
       if (!engine) {
         if (Platform.OS === 'web') {

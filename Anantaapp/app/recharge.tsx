@@ -38,7 +38,7 @@ interface RechargeHistory {
 type PaymentMethod = 'UPI' | 'Card' | 'Wallet';
 type RechargeStep = 'plans' | 'payment' | 'order' | 'complete' | 'history';
 
-const API_BASE = 'http://localhost:8082';
+const API_BASE = 'https://ecofuelglobal.com';
 
 export default function RechargeScreen() {
   const { isDark } = useTheme();

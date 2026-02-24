@@ -2,9 +2,9 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Image, StyleSheet, TextInput, TouchableOpacity, View, Text, KeyboardAvoidingView, Platform, Alert, Modal, FlatList } from 'react-native';
+import { Animated, Image, StyleSheet, TextInput, TouchableOpacity, View, Text, KeyboardAvoidingView, Platform, Alert, Modal, FlatList, PermissionsAndroid } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
-import { createAgoraEngine } from '@/agoraClient';
+import { createAgoraEngine, RtcSurfaceView } from '@/agoraClient';
 
 const API_BASE = 'https://ecofuelglobal.com';
 
@@ -65,6 +65,7 @@ export default function VideoLiveScreen() {
   const [liveComments, setLiveComments] = useState<any[]>([]);
   const [messageText, setMessageText] = useState('');
   const animatedValues = useRef<{[key: number]: Animated.Value}>({});
+  const [remoteUid, setRemoteUid] = useState<number | null>(null);
   
   const comments: any[] = [];
 
@@ -232,9 +233,33 @@ export default function VideoLiveScreen() {
     }
   };
 
+  const requestMediaPermissions = async () => {
+    if (Platform.OS !== 'android') {
+      return true;
+    }
+    try {
+      const result = await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+      ]);
+      const cameraGranted =
+        result[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.GRANTED;
+      const audioGranted =
+        result[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === PermissionsAndroid.RESULTS.GRANTED;
+      return cameraGranted && audioGranted;
+    } catch {
+      return false;
+    }
+  };
+
   const initAgora = async () => {
     if (!appId || !token || !channelName) return;
     try {
+      const hasPermission = await requestMediaPermissions();
+      if (!hasPermission) {
+        Alert.alert('Permission required', 'Camera and microphone permissions are needed for live.');
+        return;
+      }
       const engine = await createAgoraEngine(appId);
       if (!engine) {
         if (Platform.OS === 'web') {
@@ -246,6 +271,9 @@ export default function VideoLiveScreen() {
       if (engine.enableVideo) {
         await engine.enableVideo();
       }
+      if (engine.startPreview) {
+        await engine.startPreview();
+      }
       if (engine.setChannelProfile) {
         await engine.setChannelProfile(1);
       }
@@ -256,6 +284,12 @@ export default function VideoLiveScreen() {
       if (engine.addListener) {
         engine.addListener('JoinChannelSuccess', () => {
           setJoined(true);
+        });
+        engine.addListener('UserJoined', (uid: number) => {
+          setRemoteUid(uid);
+        });
+        engine.addListener('UserOffline', (uid: number) => {
+          setRemoteUid(prev => (prev === uid ? null : prev));
         });
       }
       if (engine.joinChannel) {
@@ -349,7 +383,16 @@ export default function VideoLiveScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={0}
     >
-      <View style={styles.backgroundImage} />
+      <View style={styles.backgroundImage}>
+        {Platform.OS !== 'web' && joined && (
+          <RtcSurfaceView
+            canvas={{
+              uid: role === 'viewer' && remoteUid != null ? remoteUid : 0,
+            }}
+            style={styles.videoSurface}
+          />
+        )}
+      </View>
       
       <View style={styles.overlay}>
         <View style={styles.header}>
@@ -549,6 +592,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '100%',
     height: '100%',
+  },
+  videoSurface: {
+    flex: 1,
   },
   overlay: {
     flex: 1,

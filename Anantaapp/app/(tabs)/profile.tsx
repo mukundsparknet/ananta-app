@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useProfile } from '../../contexts/ProfileContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import * as SecureStore from 'expo-secure-store';
 
 const API_BASE = 'https://ecofuelglobal.com';
 
@@ -34,12 +35,22 @@ export default function ProfileScreen() {
   const { isDark } = useTheme();
 
   useEffect(() => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      const storedUserId = window.localStorage.getItem('userId');
+    const init = async () => {
+      let storedUserId: string | null = null;
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        storedUserId = window.localStorage.getItem('userId');
+      } else {
+        try {
+          storedUserId = await SecureStore.getItemAsync('userId');
+        } catch {
+          storedUserId = null;
+        }
+      }
       if (storedUserId) {
         loadProfile(storedUserId);
       }
-    }
+    };
+    init();
   }, []);
 
   const loadProfile = async (userId: string) => {

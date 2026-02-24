@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ImageBackground, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, StatusBar, Dimensions, Alert } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
@@ -61,8 +62,15 @@ export default function OTPScreen() {
       const kycStatus = data.kycStatus as string;
       const hasProfile = !!data.hasProfile;
 
-      if (Platform.OS === 'web' && typeof window !== 'undefined' && userId) {
-        window.localStorage.setItem('userId', userId);
+      if (userId) {
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.localStorage.setItem('userId', userId);
+        } else {
+          try {
+            await SecureStore.setItemAsync('userId', userId);
+          } catch {
+          }
+        }
       }
 
       if (kycStatus === 'APPROVED') {

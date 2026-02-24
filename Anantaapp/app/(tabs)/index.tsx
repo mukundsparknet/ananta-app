@@ -70,30 +70,6 @@ export default function HomeScreen() {
   
   const API_BASE = 'https://ecofuelglobal.com';
 
-  const videos = [
-    { id: 1, title: '#joy with life partner', user: 'Rachel James', location: 'India', views: '23K', image: require('@/assets/images/h1.png.png') },
-    { id: 2, title: '#Alone Life', user: 'Micale Johans', location: 'India', views: '26B', image: require('@/assets/images/h2.png.png') },
-    { id: 3, title: '#Smile can win', user: 'Dwayen jack', location: 'U.S.A', views: '23K', image: require('@/assets/images/h3.png.png') },
-    { id: 4, title: '#Fashion adda', user: 'Jenny styler', location: 'Spain', views: '26B', image: require('@/assets/images/h4.png.png') },
-    { id: 5, title: '#Dance vibes', user: 'Alex Chen', location: 'Canada', views: '18K', image: require('@/assets/images/h1.png.png') },
-    { id: 6, title: '#Music session', user: 'Emma Davis', location: 'UK', views: '31K', image: require('@/assets/images/h2.png.png') },
-    { id: 7, title: '#Art & Craft', user: 'Lisa Park', location: 'Korea', views: '15K', image: require('@/assets/images/h3.png.png') },
-    { id: 8, title: '#Gaming Live', user: 'John Smith', location: 'Australia', views: '42K', image: require('@/assets/images/h4.png.png') },
-    { id: 9, title: '#Cooking Show', user: 'Maria Garcia', location: 'Mexico', views: '28K', image: require('@/assets/images/h1.png.png') },
-  ];
-
-  const audioStreams = [
-    { id: 1, title: 'Morning Meditation', user: 'Sarah Wilson', location: 'India', listeners: '1.2K', image: require('@/assets/images/h1.png.png') },
-    { id: 2, title: 'Jazz Evening', user: 'Mike Johnson', location: 'USA', listeners: '850', image: require('@/assets/images/h2.png.png') },
-    { id: 3, title: 'Podcast Talk', user: 'Emma Davis', location: 'UK', listeners: '2.1K', image: require('@/assets/images/h3.png.png') },
-    { id: 4, title: 'Music Lounge', user: 'Alex Chen', location: 'Canada', listeners: '950', image: require('@/assets/images/h4.png.png') },
-    { id: 5, title: 'Chill Beats', user: 'Lisa Park', location: 'Korea', listeners: '1.8K', image: require('@/assets/images/h1.png.png') },
-    { id: 6, title: 'Night Stories', user: 'John Smith', location: 'Australia', listeners: '720', image: require('@/assets/images/h2.png.png') },
-    { id: 7, title: 'Acoustic Session', user: 'Maria Garcia', location: 'Mexico', listeners: '1.5K', image: require('@/assets/images/h3.png.png') },
-    { id: 8, title: 'Radio Show', user: 'David Lee', location: 'Singapore', listeners: '2.3K', image: require('@/assets/images/h4.png.png') },
-    { id: 9, title: 'Meditation Hour', user: 'Anna Kim', location: 'Japan', listeners: '1.1K', image: require('@/assets/images/h1.png.png') },
-  ];
-
   useEffect(() => {
     if (heroItems.length < 2) {
       return;
@@ -162,14 +138,13 @@ export default function HomeScreen() {
       const videoSessions = sessions.filter((s: any) => s.type === 'VIDEO');
       const audioSessions = sessions.filter((s: any) => s.type === 'AUDIO');
 
-      const mapToCards = (items: any[], fallback: any[]) => {
+      const mapToCards = (items: any[]) => {
         if (!items.length) return [];
-        return items.map((session, index) => {
-          const fallbackItem = fallback[index % fallback.length];
+        return items.map((session: any) => {
           const isVideo = session.type === 'VIDEO';
           const viewers = session.viewerCount || 0;
           return {
-            id: session.sessionId,
+            id: session.sessionId ?? session.id,
             sessionId: session.sessionId,
             hostUserId: session.hostUserId,
             title: session.title || '#LIVE',
@@ -178,13 +153,16 @@ export default function HomeScreen() {
             views: isVideo ? String(viewers) : undefined,
             listeners: !isVideo ? String(viewers) : undefined,
             image: resolveProfileImageSource(session.profileImage),
-            followKey: session.hostUserId != null ? session.hostUserId : String(fallbackItem.id),
+            followKey:
+              session.hostUserId != null
+                ? String(session.hostUserId)
+                : session.sessionId ?? session.id ?? undefined,
           };
         });
       };
 
-      setVideoLives(mapToCards(videoSessions, videos));
-      setAudioLives(mapToCards(audioSessions, audioStreams));
+      setVideoLives(mapToCards(videoSessions));
+      setAudioLives(mapToCards(audioSessions));
     } catch {
     }
   };
@@ -201,8 +179,8 @@ export default function HomeScreen() {
     return () => clearInterval(interval);
   }, []);
 
-  const currentVideos = videoLives.length ? videoLives : videos;
-  const currentAudios = audioLives.length ? audioLives : audioStreams;
+  const currentVideos = videoLives;
+  const currentAudios = audioLives;
 
   const hasLive = activeTab === 'video' ? videoLives.length > 0 : audioLives.length > 0;
   const hasHero = heroItems.length > 0;
@@ -417,7 +395,7 @@ export default function HomeScreen() {
         </Animated.View>
         ) : null}
         
-        {/* Content Grid - Asymmetric Layout */}
+        {hasLive ? (
         <Animated.View style={[styles.contentGrid, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <View style={styles.leftColumn}>
             {/* Large card on left */}
@@ -617,8 +595,14 @@ export default function HomeScreen() {
             ) : null}
           </View>
         </Animated.View>
+        ) : (
+          <View style={styles.emptyStateContainer}>
+            <Text style={[styles.emptyStateText, { color: isDark ? '#ccc' : '#666' }]}>
+              No live sessions right now
+            </Text>
+          </View>
+        )}
         
-        {/* Bottom row - 1 card */}
         <Animated.View style={[styles.bottomRow, { opacity: fadeAnim }]}>
           {currentList.slice(7, 8).map((item, index) => (
             <TouchableOpacity 
@@ -1040,7 +1024,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
-
+  emptyStateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
   userSection: {
     flexDirection: 'row',
     alignItems: 'center',

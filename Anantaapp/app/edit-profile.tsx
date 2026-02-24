@@ -3,6 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -18,6 +19,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useProfile } from '../contexts/ProfileContext';
 import { useTheme } from '../contexts/ThemeContext';
+import * as SecureStore from 'expo-secure-store';
+import * as FileSystem from 'expo-file-system';
 
 const { width, height } = Dimensions.get('window');
 const API_BASE = 'https://ecofuelglobal.com';
@@ -25,7 +28,7 @@ const API_BASE = 'https://ecofuelglobal.com';
 const resolveProfileUri = (value: string | null | undefined) => {
   if (!value) return null;
   if (value.startsWith('http') || value.startsWith('data:')) return value;
-  if (value.startsWith('/uploads/')) return `http://localhost:3000${value}`;
+  if (value.startsWith('/uploads/')) return `https://ecofuelglobal.com${value}`;
   return value;
 };
 
@@ -44,14 +47,26 @@ export default function EditProfileScreen() {
   const [country, setCountry] = useState(profileData.country);
   const [pinCode, setPinCode] = useState(profileData.pinCode);
   const [userName, setUserName] = useState(profileData.UserName);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      const storedUserId = window.localStorage.getItem('userId');
+    const init = async () => {
+      let storedUserId: string | null = null;
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        storedUserId = window.localStorage.getItem('userId');
+      } else {
+        try {
+          storedUserId = await SecureStore.getItemAsync('userId');
+        } catch {
+          storedUserId = null;
+        }
+      }
       if (storedUserId) {
+        setUserId(storedUserId);
         loadProfile(storedUserId);
       }
-    }
+    };
+    init();
   }, []);
 
   const loadProfile = async (userId: string) => {
@@ -94,6 +109,32 @@ export default function EditProfileScreen() {
     }
   };
 
+  const toBase64 = async (uri: string | null) => {
+    if (!uri) return null;
+    try {
+      if (Platform.OS === 'web') {
+        if (uri.startsWith('data:')) {
+          return uri;
+        }
+        const res = await fetch(uri);
+        const blob = await res.blob();
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        });
+        return dataUrl;
+      }
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      return `data:image/jpeg;base64,${base64}`;
+    } catch {
+      return null;
+    }
+  };
+
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -107,23 +148,68 @@ export default function EditProfileScreen() {
     }
   };
 
-  const saveProfile = () => {
-    updateProfile({
-      name,
-      bio,
-      location,
-      profileImage,
-      profilePhoto: profileImage,
-      gender,
-      birthday,
-      addressLine1,
-      city,
-      state,
-      country,
-      pinCode,
-      UserName: userName
-    });
-    router.back();
+  const saveProfile = async () => {
+    if (!userId) {
+      Alert.alert('Error', 'User information not found, please login again');
+      return;
+    }
+    try {
+      let imageToSend: string | null = profileImage;
+      if (
+        profileImage &&
+        !profileImage.startsWith('http') &&
+        !profileImage.startsWith('data:') &&
+        !profileImage.startsWith('/uploads/')
+      ) {
+        imageToSend = await toBase64(profileImage);
+      }
+      const fullName = name && name.trim().length > 0 ? name.trim() : userName.trim();
+      const payload = {
+        userId,
+        username: userName.trim(),
+        fullName,
+        bio,
+        location,
+        gender,
+        birthday,
+        addressLine1,
+        city,
+        state,
+        country,
+        pinCode,
+        profileImage: imageToSend,
+      };
+      const response = await fetch(`${API_BASE}/api/app/profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => null);
+        const message = err?.message || 'Failed to save profile';
+        Alert.alert('Error', message);
+        return;
+      }
+      const resolvedUri = resolveProfileUri(imageToSend) || profileImage;
+      updateProfile({
+        name: fullName,
+        UserName: userName,
+        bio,
+        location,
+        gender,
+        birthday,
+        addressLine1,
+        city,
+        state,
+        country,
+        pinCode,
+        profileImage: resolvedUri || profileImage,
+        profilePhoto: resolvedUri || profileImage,
+      });
+      router.back();
+    } catch {
+      Alert.alert('Error', 'Something went wrong while saving profile');
+    }
   };
 
   return (
