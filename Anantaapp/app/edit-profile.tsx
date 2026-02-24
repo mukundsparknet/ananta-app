@@ -77,7 +77,8 @@ export default function EditProfileScreen() {
       const data = await res.json();
       const user = data.user;
       const profileUri = resolveProfileUri(user.profileImage);
-      setProfileImage(profileUri || profileImage);
+      const coverUri = resolveProfileUri(user.coverImage);
+      setProfileImage(profileUri);
       setName(user.fullName || '');
       setUserName(user.username || '');
       setBio(user.bio || '');
@@ -101,8 +102,9 @@ export default function EditProfileScreen() {
         state: user.state || '',
         country: user.country || '',
         pinCode: user.pinCode || '',
-        profileImage: profileUri || profileImage,
-        profilePhoto: profileUri || profileImage,
+        profileImage: profileUri,
+        profilePhoto: profileUri,
+        headerBackground: coverUri,
       });
     } catch {
     }
@@ -234,7 +236,13 @@ export default function EditProfileScreen() {
         {/* Profile Image */}
         <View style={[styles.profileImageSection, { backgroundColor: isDark ? '#2a2a2a' : 'white' }]}>
           <View style={styles.profileImageContainer}>
-            <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : (
+              <View style={[styles.profileImage, { backgroundColor: isDark ? '#f7c14d' : '#127d96', justifyContent: 'center', alignItems: 'center' }]}>
+                <Ionicons name="person" size={50} color={isDark ? 'black' : 'white'} />
+              </View>
+            )}
             <TouchableOpacity style={styles.editImageButton} onPress={pickImage}>
               <Ionicons name="camera" size={16} color="white" />
             </TouchableOpacity>

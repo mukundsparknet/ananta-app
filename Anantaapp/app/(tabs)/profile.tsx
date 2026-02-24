@@ -72,18 +72,20 @@ export default function ProfileScreen() {
       const profileUri = resolveProfileUri(user.profileImage);
       const coverUri = resolveProfileUri(user.coverImage);
       updateProfile({
-        name: user.fullName || user.username || profileData.name,
-        title: user.username || profileData.title,
-        bio: user.bio || profileData.bio,
-        location: user.location || profileData.location,
+        name: user.fullName || user.username || '',
+        title: user.username || '',
+        bio: user.bio || '',
+        location: user.location || '',
+        gender: user.gender || '',
+        birthday: user.birthday || '',
         addressLine1: user.addressLine1 || '',
         city: user.city || '',
         state: user.state || '',
         country: user.country || '',
         pinCode: user.pinCode || '',
-        profileImage: profileUri || profileData.profileImage,
-        profilePhoto: profileUri || profileData.profileImage,
-        headerBackground: coverUri || profileData.headerBackground,
+        profileImage: profileUri,
+        profilePhoto: profileUri,
+        headerBackground: coverUri,
         followers: typeof data.followers === 'number' ? data.followers : profileData.followers,
         following: typeof data.following === 'number' ? data.following : profileData.following,
         coins: typeof data.coins === 'number' ? data.coins : profileData.coins,
@@ -169,10 +171,14 @@ export default function ProfileScreen() {
       
       {/* Header with background image */}
       <View style={styles.headerContainer}>
-        <Image 
-          source={{ uri: profileData.headerBackground }}
-          style={styles.headerBackgroundImage}
-        />
+        {profileData.headerBackground ? (
+          <Image 
+            source={{ uri: profileData.headerBackground }}
+            style={styles.headerBackgroundImage}
+          />
+        ) : (
+          <View style={[styles.headerBackgroundImage, { backgroundColor: isDark ? '#2a2a2a' : '#127d96' }]} />
+        )}
         <LinearGradient
           colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.1)', 'rgba(0,0,0,0.4)']}
           style={styles.headerOverlay}
@@ -191,10 +197,16 @@ export default function ProfileScreen() {
       <View style={[styles.profileCard, { backgroundColor: isDark ? '#2a2a2a' : 'white' }]}>
         <View style={styles.profileInfo}>
           <View style={styles.avatarContainer}>
-            <Image
-              source={{ uri: profileData.profileImage }}
-              style={styles.profileAvatar}
-            />
+            {profileData.profileImage ? (
+              <Image
+                source={{ uri: profileData.profileImage }}
+                style={styles.profileAvatar}
+              />
+            ) : (
+              <View style={[styles.profileAvatar, { backgroundColor: isDark ? '#f7c14d' : '#127d96', justifyContent: 'center', alignItems: 'center' }]}>
+                <Ionicons name="person" size={35} color={isDark ? 'black' : 'white'} />
+              </View>
+            )}
             <View style={styles.onlineIndicator} />
           </View>
           <View style={styles.userInfo}>
