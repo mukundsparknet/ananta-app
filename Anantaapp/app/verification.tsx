@@ -16,9 +16,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
+import { ENV } from '@/config/env';
 
 const { width, height } = Dimensions.get('window');
-const API_BASE = 'https://ecofuelglobal.com';
 
 export default function VerificationScreen() {
   const { isDark } = useTheme();
@@ -42,7 +42,7 @@ export default function VerificationScreen() {
 
   const loadVerification = async (userId: string) => {
     try {
-      const res = await fetch(`${API_BASE}/api/app/profile/${userId}`);
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/profile/${userId}`);
       if (!res.ok) {
         return;
       }

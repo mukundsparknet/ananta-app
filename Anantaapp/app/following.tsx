@@ -4,15 +4,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
+import { ENV } from '@/config/env';
 
-const API_BASE = 'https://ecofuelglobal.com';
 
 const resolveAvatarUri = (value: string | null | undefined) => {
   if (!value) return '';
   const trimmed = value.trim();
   if (!trimmed) return '';
   if (trimmed.startsWith('http') || trimmed.startsWith('data:')) return trimmed;
-  if (trimmed.startsWith('/uploads/')) return `https://ecofuelglobal.com${trimmed}`;
+  if (trimmed.startsWith('/uploads/')) return `${ENV.API_BASE_URL}${trimmed}`;
   if (trimmed.length > 100) return `data:image/jpeg;base64,${trimmed}`;
   return trimmed;
 };
@@ -57,7 +57,7 @@ export default function FollowingScreen() {
     }
     console.log('[Following] fetchFollowing for userId:', userId);
     try {
-      const res = await fetch(`${API_BASE}/api/app/profile/${userId}`);
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/profile/${userId}`);
       console.log('[Following] profile response status:', res.status);
       if (!res.ok) {
         return;
@@ -96,7 +96,7 @@ export default function FollowingScreen() {
     }
     console.log('[Following] handleToggleFollow', { currentUserId, targetUserId });
     try {
-      const response = await fetch(`${API_BASE}/api/app/follow/toggle`, {
+      const response = await fetch(`${ENV.API_BASE_URL}/api/app/follow/toggle`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

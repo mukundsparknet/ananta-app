@@ -9,7 +9,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { createAgoraEngine } from '@/agoraClient';
 
 const { width, height } = Dimensions.get('window');
-const API_BASE = 'https://ecofuelglobal.com';
+import { ENV } from '@/config/env';
+
 
 export default function AudioLiveScreen() {
   const { isDark } = useTheme();
@@ -234,7 +235,7 @@ export default function AudioLiveScreen() {
   const endLive = async () => {
     try {
       if (sessionId && userId) {
-        await fetch(`${API_BASE}/api/app/live/end`, {
+        await fetch(`${ENV.API_BASE_URL}/api/app/live/end`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

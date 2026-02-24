@@ -22,13 +22,12 @@ import { useTheme } from '../contexts/ThemeContext';
 import * as SecureStore from 'expo-secure-store';
 import * as FileSystem from 'expo-file-system';
 
-const { width, height } = Dimensions.get('window');
-const API_BASE = 'https://ecofuelglobal.com';
+import { ENV } from '@/config/env';
 
 const resolveProfileUri = (value: string | null | undefined) => {
   if (!value) return null;
   if (value.startsWith('http') || value.startsWith('data:')) return value;
-  if (value.startsWith('/uploads/')) return `https://ecofuelglobal.com${value}`;
+  if (value.startsWith('/uploads/')) return `${ENV.API_BASE_URL}${value}`;
   return value;
 };
 
@@ -71,7 +70,7 @@ export default function EditProfileScreen() {
 
   const loadProfile = async (userId: string) => {
     try {
-      const res = await fetch(`${API_BASE}/api/app/profile/${userId}`);
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/profile/${userId}`);
       if (!res.ok) {
         return;
       }
@@ -179,7 +178,7 @@ export default function EditProfileScreen() {
         pinCode,
         profileImage: imageToSend,
       };
-      const response = await fetch(`${API_BASE}/api/app/profile`, {
+      const response = await fetch(`${ENV.API_BASE_URL}/api/app/profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

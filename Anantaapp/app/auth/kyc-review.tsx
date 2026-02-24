@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
-const API_BASE = 'https://ecofuelglobal.com';
+import { ENV } from '@/config/env';
 
 export default function KycReviewScreen() {
   const params = useLocalSearchParams();
@@ -18,7 +18,7 @@ export default function KycReviewScreen() {
     }
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/api/app/kyc-status/${userId}`);
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/kyc-status/${userId}`);
       if (!res.ok) {
         throw new Error('Failed to check status');
       }

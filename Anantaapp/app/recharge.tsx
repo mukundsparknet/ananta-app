@@ -37,8 +37,7 @@ interface RechargeHistory {
 
 type PaymentMethod = 'UPI' | 'Card' | 'Wallet';
 type RechargeStep = 'plans' | 'payment' | 'order' | 'complete' | 'history';
-
-const API_BASE = 'https://ecofuelglobal.com';
+import { ENV } from '@/config/env';
 
 export default function RechargeScreen() {
   const { isDark } = useTheme();
@@ -69,7 +68,7 @@ export default function RechargeScreen() {
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/app/wallet/plans`);
+        const response = await fetch(`${ENV.API_BASE_URL}/api/app/wallet/plans`);
         if (!response.ok) {
           return;
         }
@@ -124,7 +123,7 @@ export default function RechargeScreen() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/api/app/wallet/topup`, {
+      const response = await fetch(`${ENV.API_BASE_URL}/api/app/wallet/topup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

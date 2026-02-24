@@ -5,13 +5,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, StyleSheet, TextInput, TouchableOpacity, View, Text, KeyboardAvoidingView, Platform, Alert, Modal, FlatList, PermissionsAndroid } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { createAgoraEngine, RtcSurfaceView } from '@/agoraClient';
-
-const API_BASE = 'https://ecofuelglobal.com';
+import { ENV } from '@/config/env';
 
 const resolveGiftImageUrl = (value: string | null | undefined) => {
   if (!value) return '';
   if (value.startsWith('http') || value.startsWith('data:')) return value;
-  if (value.startsWith('/uploads/')) return `https://ecofuelglobal.com${value}`;
+  if (value.startsWith('/uploads/')) return `${ENV.API_BASE_URL}${value}`;
   return value;
 };
 
@@ -19,7 +18,7 @@ const resolveProfileImageUrl = (value: string | null | undefined) => {
   if (!value) return '';
   if (value.startsWith('blob:')) return '';
   if (value.startsWith('http') || value.startsWith('data:')) return value;
-  if (value.startsWith('/uploads/')) return `https://ecofuelglobal.com${value}`;
+  if (value.startsWith('/uploads/')) return `${ENV.API_BASE_URL}${value}`;
   if (value.length > 100) return `data:image/jpeg;base64,${value}`;
   return value;
 };
@@ -105,7 +104,7 @@ export default function VideoLiveScreen() {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/api/app/wallet/${userId}`);
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/wallet/${userId}`);
       if (!res.ok) {
         return;
       }
@@ -119,7 +118,7 @@ export default function VideoLiveScreen() {
   const loadGifts = async () => {
     try {
       setLoadingGifts(true);
-      const res = await fetch(`${API_BASE}/api/app/gifts`);
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/gifts`);
       if (!res.ok) {
         setLoadingGifts(false);
         return;
@@ -154,7 +153,7 @@ export default function VideoLiveScreen() {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/api/app/gifts/send`, {
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/gifts/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -189,7 +188,7 @@ export default function VideoLiveScreen() {
       return;
     }
     try {
-      const response = await fetch(`${API_BASE}/api/app/follow/toggle`, {
+      const response = await fetch(`${ENV.API_BASE_URL}/api/app/follow/toggle`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

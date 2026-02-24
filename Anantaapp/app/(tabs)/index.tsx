@@ -8,6 +8,7 @@ import { Video } from 'expo-av';
 import { useTheme } from '@/contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { ENV } from '@/config/env';
 
 const { width, height } = Dimensions.get('window');
 const isTablet = width > 768;
@@ -54,7 +55,7 @@ export default function HomeScreen() {
       return;
     }
     try {
-      await fetch(`${API_BASE}/api/app/follow/toggle`, {
+      await fetch(`${ENV.API_BASE_URL}/api/app/follow/toggle`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,7 +69,6 @@ export default function HomeScreen() {
     }
   };
   
-  const API_BASE = 'https://ecofuelglobal.com';
 
   useEffect(() => {
     if (heroItems.length < 2) {
@@ -99,7 +99,7 @@ export default function HomeScreen() {
     if (!value) return null;
     if (value.startsWith('blob:')) return null;
     if (value.startsWith('http') || value.startsWith('data:')) return { uri: value };
-    if (value.startsWith('/uploads/')) return { uri: `https://ecofuelglobal.com${value}` };
+    if (value.startsWith('/uploads/')) return { uri: `${ENV.API_BASE_URL}${value}` };
     if (value.length > 100) return { uri: `data:image/jpeg;base64,${value}` };
     return { uri: value };
   };
@@ -108,14 +108,14 @@ export default function HomeScreen() {
     if (!value) return null;
     if (value.startsWith('blob:')) return null;
     if (value.startsWith('http') || value.startsWith('data:')) return value;
-    if (value.startsWith('/uploads/')) return `https://ecofuelglobal.com${value}`;
+    if (value.startsWith('/uploads/')) return `${ENV.API_BASE_URL}${value}`;
     if (value.length > 100) return `data:application/octet-stream;base64,${value}`;
     return value;
   };
 
   const fetchHeroItems = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/app/hero`);
+      const response = await fetch(`${ENV.API_BASE_URL}/api/app/hero`);
       if (!response.ok) {
         return;
       }
@@ -129,7 +129,7 @@ export default function HomeScreen() {
 
   const fetchHomeLiveSessions = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/app/live/list`);
+      const response = await fetch(`${ENV.API_BASE_URL}/api/app/live/list`);
       if (!response.ok) {
         return;
       }
@@ -229,7 +229,7 @@ export default function HomeScreen() {
         userId = 'guest';
       }
 
-      const response = await fetch(`${API_BASE}/api/app/live/join`, {
+      const response = await fetch(`${ENV.API_BASE_URL}/api/app/live/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -13,8 +13,7 @@ import { Animated } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useProfile } from '../../contexts/ProfileContext';
 import * as FileSystem from 'expo-file-system';
-
-const API_BASE = 'https://ecofuelglobal.com';
+import { ENV } from '@/config/env';
 
 export default function ProfileScreen() {
   const params = useLocalSearchParams();
@@ -344,7 +343,7 @@ export default function ProfileScreen() {
         documentBackImage: backImageBase64,
       };
 
-      const response = await fetch(`${API_BASE}/api/app/register`, {
+      const response = await fetch(`${ENV.API_BASE_URL}/api/app/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

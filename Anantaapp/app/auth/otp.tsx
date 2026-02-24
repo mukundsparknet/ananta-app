@@ -8,9 +8,9 @@ import { useRef, useState } from 'react';
 import { ImageBackground, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, StatusBar, Dimensions, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
+import { ENV } from '@/config/env';
 
 const { width, height } = Dimensions.get('window');
-const API_BASE = 'https://ecofuelglobal.com';
 
 export default function OTPScreen() {
   const params = useLocalSearchParams();
@@ -46,7 +46,7 @@ export default function OTPScreen() {
     }
     try {
       setSubmitting(true);
-      const response = await fetch(`${API_BASE}/api/app/verify-otp`, {
+      const response = await fetch(`${ENV.API_BASE_URL}/api/app/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, otp: code }),

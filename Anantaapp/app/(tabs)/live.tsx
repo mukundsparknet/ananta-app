@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import { ENV } from '@/config/env';
 
 const { width, height } = Dimensions.get('window');
 
@@ -17,8 +18,6 @@ export default function LiveScreen() {
   const [liveSessions, setLiveSessions] = useState<any[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [followedSessionKeys, setFollowedSessionKeys] = useState<string[]>([]);
-
-  const API_BASE = 'https://ecofuelglobal.com';
 
   const handleStartLive = async () => {
     let userId: string | null = null;
@@ -31,7 +30,7 @@ export default function LiveScreen() {
 
     try {
       setStarting(true);
-      const response = await fetch(`${API_BASE}/api/app/live/start`, {
+      const response = await fetch(`${ENV.API_BASE_URL}/api/app/live/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,7 +74,7 @@ export default function LiveScreen() {
   const fetchLiveSessions = async () => {
     try {
       setLoadingSessions(true);
-      const response = await fetch(`${API_BASE}/api/app/live/list`);
+      const response = await fetch(`${ENV.API_BASE_URL}/api/app/live/list`);
       if (!response.ok) {
         return;
       }
@@ -109,7 +108,7 @@ export default function LiveScreen() {
       return;
     }
     try {
-      await fetch(`${API_BASE}/api/app/follow/toggle`, {
+      await fetch(`${ENV.API_BASE_URL}/api/app/follow/toggle`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -139,7 +138,7 @@ export default function LiveScreen() {
         userId = 'guest';
       }
 
-      const response = await fetch(`${API_BASE}/api/app/live/join`, {
+      const response = await fetch(`${ENV.API_BASE_URL}/api/app/live/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -205,7 +204,7 @@ export default function LiveScreen() {
       if (!value) return null;
       if (value.startsWith('blob:')) return null;
       if (value.startsWith('http') || value.startsWith('data:')) return { uri: value };
-      if (value.startsWith('/uploads/')) return { uri: `https://ecofuelglobal.com${value}` };
+      if (value.startsWith('/uploads/')) return { uri: `${ENV.API_BASE_URL}${value}` };
       if (value.length > 100) return { uri: `data:image/jpeg;base64,${value}` };
       return { uri: value };
     };

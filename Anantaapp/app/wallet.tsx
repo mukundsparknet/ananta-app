@@ -4,9 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ENV } from '@/config/env';
 
 const { width, height } = Dimensions.get('window');
-const API_BASE = 'https://ecofuelglobal.com';
 
 export default function WalletScreen() {
   const { isDark } = useTheme();
@@ -42,7 +42,7 @@ export default function WalletScreen() {
     setCurrentUserId(userId);
     const fetchWallet = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/app/wallet/${userId}`);
+        const response = await fetch(`${ENV.API_BASE_URL}/api/app/wallet/${userId}`);
         if (!response.ok) {
           return;
         }
@@ -56,7 +56,7 @@ export default function WalletScreen() {
     const fetchTransactions = async () => {
       try {
         setLoadingTransactions(true);
-        const response = await fetch(`${API_BASE}/api/app/wallet/${userId}/transactions`);
+        const response = await fetch(`${ENV.API_BASE_URL}/api/app/wallet/${userId}/transactions`);
         if (!response.ok) {
           setLoadingTransactions(false);
           return;
@@ -73,7 +73,7 @@ export default function WalletScreen() {
     fetchTransactions();
     const fetchWithdrawConfig = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/app/wallet/withdraw-config`);
+        const response = await fetch(`${ENV.API_BASE_URL}/api/app/wallet/withdraw-config`);
         if (!response.ok) {
           return;
         }
@@ -96,8 +96,8 @@ export default function WalletScreen() {
     }
     try {
       const [followersRes, followingRes] = await Promise.all([
-        fetch(`${API_BASE}/api/app/followers/${currentUserId}`),
-        fetch(`${API_BASE}/api/app/following/${currentUserId}`),
+        fetch(`${ENV.API_BASE_URL}/api/app/followers/${currentUserId}`),
+        fetch(`${ENV.API_BASE_URL}/api/app/following/${currentUserId}`),
       ]);
       const followersJson = followersRes.ok ? await followersRes.json() : [];
       const followingJson = followingRes.ok ? await followingRes.json() : [];
@@ -158,7 +158,7 @@ export default function WalletScreen() {
     }
     try {
       setSubmittingWithdraw(true);
-      const res = await fetch(`${API_BASE}/api/app/wallet/withdraw`, {
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/wallet/withdraw`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -214,7 +214,7 @@ export default function WalletScreen() {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/api/app/wallet/transfer`, {
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/wallet/transfer`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

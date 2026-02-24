@@ -12,8 +12,8 @@ import {
   View,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import { ENV } from '@/config/env';
 
-const API_BASE = 'https://ecofuelglobal.com';
 
 type LiveHistoryItem = {
   sessionId: string;
@@ -65,7 +65,7 @@ export default function LiveHistoryScreen() {
       try {
         setLoading(true);
         const res = await fetch(
-          `${API_BASE}/api/app/live/history/${currentUserId}`
+          `${ENV.API_BASE_URL}/api/app/live/history/${currentUserId}`
         );
         if (!res.ok) {
           setLoading(false);

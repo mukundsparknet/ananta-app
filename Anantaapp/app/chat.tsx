@@ -16,7 +16,7 @@ import {
 import { useTheme } from '../contexts/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
-const API_BASE = 'https://ecofuelglobal.com';
+import { ENV } from '@/config/env';
 
 type ChatMessageItem = {
   id: string;
@@ -64,7 +64,7 @@ export default function ChatScreen() {
     const ensureThread = async () => {
       try {
         const res = await fetch(
-          `${API_BASE}/api/app/messages/thread-by-users?userA=${encodeURIComponent(
+          `${ENV.API_BASE_URL}/api/app/messages/thread-by-users?userA=${encodeURIComponent(
             currentUserId
           )}&userB=${encodeURIComponent(otherUserId)}`
         );
@@ -91,7 +91,7 @@ export default function ChatScreen() {
     }
     try {
       const res = await fetch(
-        `${API_BASE}/api/app/messages/thread/${thread}?userId=${encodeURIComponent(userId)}`
+        `${ENV.API_BASE_URL}/api/app/messages/thread/${thread}?userId=${encodeURIComponent(userId)}`
       );
       if (!res.ok) {
         return;
@@ -170,7 +170,7 @@ export default function ChatScreen() {
       if (threadId) {
         body.threadId = threadId;
       }
-      const res = await fetch(`${API_BASE}/api/app/messages/send`, {
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/messages/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

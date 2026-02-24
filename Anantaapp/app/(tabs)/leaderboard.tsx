@@ -10,7 +10,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
-const API_BASE = 'https://ecofuelglobal.com';
+import { ENV } from '@/config/env';
 
 const avatars = [
   require('@/assets/images/h1.png.png'),
@@ -58,8 +58,8 @@ export default function LeaderboardScreen() {
       try {
         setLoading(true);
         const [earningRes, spentRes] = await Promise.all([
-          fetch(`${API_BASE}/api/app/wallet/leaderboard/earning`),
-          fetch(`${API_BASE}/api/app/wallet/leaderboard/spent`),
+          fetch(`${ENV.API_BASE_URL}/api/app/wallet/leaderboard/earning`),
+          fetch(`${ENV.API_BASE_URL}/api/app/wallet/leaderboard/spent`),
         ]);
 
         if (earningRes.ok) {

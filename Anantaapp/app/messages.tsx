@@ -15,16 +15,16 @@ import { router } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { ENV } from '@/config/env';
 
 const { width } = Dimensions.get('window');
-const API_BASE = 'https://ecofuelglobal.com';
 
 const resolveAvatarUri = (value: string | null | undefined) => {
   if (!value) return '';
   const trimmed = value.trim();
   if (!trimmed) return '';
   if (trimmed.startsWith('http') || trimmed.startsWith('data:')) return trimmed;
-  if (trimmed.startsWith('/uploads/')) return `https://ecofuelglobal.com${trimmed}`;
+  if (trimmed.startsWith('/uploads/')) return `${ENV.API_BASE_URL}${trimmed}`;
   if (trimmed.length > 100) return `data:image/jpeg;base64,${trimmed}`;
   return trimmed;
 };
@@ -115,7 +115,7 @@ export default function MessagesScreen() {
     }
     const fetchConversations = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/app/messages/threads/${currentUserId}`);
+        const res = await fetch(`${ENV.API_BASE_URL}/api/app/messages/threads/${currentUserId}`);
         if (!res.ok) {
           return;
         }
@@ -169,7 +169,7 @@ export default function MessagesScreen() {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/api/app/profile/${currentUserId}`);
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/profile/${currentUserId}`);
       console.log('[Messages] loadContacts profile status:', res.status);
       if (!res.ok) {
         return;
