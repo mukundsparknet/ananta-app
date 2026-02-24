@@ -462,6 +462,33 @@ public class AppUserController {
                 }
             }
 
+            // Update cover image separately
+            if (StringUtils.hasText(request.getCoverImage())) {
+                try {
+                    String coverToSave = request.getCoverImage();
+                    if (coverToSave.startsWith("data:image")) {
+                        String savedPath = saveBase64Image(coverToSave, "cover", user.getUserId());
+                        if (StringUtils.hasText(savedPath)) {
+                            entityManager.createNativeQuery(
+                                "UPDATE users SET cover_image = :img WHERE user_id = :uid")
+                                .setParameter("img", savedPath)
+                                .setParameter("uid", user.getUserId())
+                                .executeUpdate();
+                            System.out.println("Cover image updated: " + savedPath);
+                        }
+                    } else if (coverToSave.startsWith("/uploads/") || coverToSave.startsWith("http")) {
+                        entityManager.createNativeQuery(
+                            "UPDATE users SET cover_image = :img WHERE user_id = :uid")
+                            .setParameter("img", coverToSave)
+                            .setParameter("uid", user.getUserId())
+                            .executeUpdate();
+                        System.out.println("Cover image path updated: " + coverToSave);
+                    }
+                } catch (Exception e) {
+                    System.out.println("Cover image update failed (non-critical): " + e.getMessage());
+                }
+            }
+
             return ResponseEntity.ok(new MessageResponse("Profile updated successfully"));
         } catch (Exception e) {
             System.out.println("=== ERROR ===");
@@ -518,7 +545,7 @@ public class AppUserController {
         if (user == null && StringUtils.hasText(normalizedUserId)) {
             try {
                 List<?> rows = entityManager.createNativeQuery(
-                                "select user_id, username, email, phone, full_name, gender, birthday, bio, address_line1, city, state, country, pin_code, location, profile_image, is_blocked, is_banned " +
+                                "select user_id, username, email, phone, full_name, gender, birthday, bio, address_line1, city, state, country, pin_code, location, profile_image, cover_image, is_blocked, is_banned " +
                                         "from users where user_id = :id limit 1")
                         .setParameter("id", normalizedUserId)
                         .getResultList();
@@ -540,11 +567,12 @@ public class AppUserController {
                     u.setPinCode(r[12] != null ? r[12].toString() : null);
                     u.setLocation(r[13] != null ? r[13].toString() : null);
                     u.setProfileImage(r[14] != null ? r[14].toString() : null);
-                    if (r[15] instanceof Boolean) {
-                        u.setBlocked((Boolean) r[15]);
-                    }
+                    u.setCoverImage(r[15] != null ? r[15].toString() : null);
                     if (r[16] instanceof Boolean) {
-                        u.setBanned((Boolean) r[16]);
+                        u.setBlocked((Boolean) r[16]);
+                    }
+                    if (r[17] instanceof Boolean) {
+                        u.setBanned((Boolean) r[17]);
                     }
                     user = u;
                 }

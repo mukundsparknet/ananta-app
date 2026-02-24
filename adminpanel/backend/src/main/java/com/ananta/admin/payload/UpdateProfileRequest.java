@@ -14,6 +14,7 @@ public class UpdateProfileRequest {
     private String country;
     private String pinCode;
     private String profileImage;
+    private String coverImage;
 
     public String getUserId() {
         return userId;
@@ -117,5 +118,13 @@ public class UpdateProfileRequest {
 
     public void setProfileImage(String profileImage) {
         this.profileImage = profileImage;
+    }
+
+    public String getCoverImage() {
+        return coverImage;
+    }
+
+    public void setCoverImage(String coverImage) {
+        this.coverImage = coverImage;
     }
 }

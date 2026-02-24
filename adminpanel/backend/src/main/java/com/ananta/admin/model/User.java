@@ -50,6 +50,9 @@ public class User {
     @Column(name = "profile_image", columnDefinition = "TEXT")
     private String profileImage;
 
+    @Column(name = "cover_image", columnDefinition = "TEXT")
+    private String coverImage;
+
     @Column(name = "is_blocked")
     private boolean isBlocked = false;
 

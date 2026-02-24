@@ -70,6 +70,7 @@ export default function ProfileScreen() {
       });
       const user = data.user;
       const profileUri = resolveProfileUri(user.profileImage);
+      const coverUri = resolveProfileUri(user.coverImage);
       updateProfile({
         name: user.fullName || user.username || profileData.name,
         title: user.username || profileData.title,
@@ -82,6 +83,7 @@ export default function ProfileScreen() {
         pinCode: user.pinCode || '',
         profileImage: profileUri || profileData.profileImage,
         profilePhoto: profileUri || profileData.profileImage,
+        headerBackground: coverUri || profileData.headerBackground,
         followers: typeof data.followers === 'number' ? data.followers : profileData.followers,
         following: typeof data.following === 'number' ? data.following : profileData.following,
         coins: typeof data.coins === 'number' ? data.coins : profileData.coins,
@@ -99,7 +101,60 @@ export default function ProfileScreen() {
     });
 
     if (!result.canceled) {
-      updateProfile({ headerBackground: result.assets[0].uri });
+      const newCoverUri = result.assets[0].uri;
+      updateProfile({ headerBackground: newCoverUri });
+      
+      // Save to backend
+      saveCoverImage(newCoverUri);
+    }
+  };
+
+  const saveCoverImage = async (coverUri: string) => {
+    try {
+      let storedUserId: string | null = null;
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        storedUserId = window.localStorage.getItem('userId');
+      } else {
+        try {
+          storedUserId = await SecureStore.getItemAsync('userId');
+        } catch {
+          storedUserId = null;
+        }
+      }
+      
+      if (!storedUserId) return;
+
+      // Convert to base64
+      let coverBase64 = coverUri;
+      if (!coverUri.startsWith('http') && !coverUri.startsWith('data:')) {
+        if (Platform.OS === 'web') {
+          const res = await fetch(coverUri);
+          const blob = await res.blob();
+          coverBase64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        } else {
+          const FileSystem = require('expo-file-system');
+          const base64 = await FileSystem.readAsStringAsync(coverUri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          coverBase64 = `data:image/jpeg;base64,${base64}`;
+        }
+      }
+
+      await fetch(`${ENV.API_BASE_URL}/api/app/profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: storedUserId,
+          coverImage: coverBase64,
+        }),
+      });
+      console.log('Cover image saved to backend');
+    } catch (error) {
+      console.error('Failed to save cover image:', error);
     }
   };
 
