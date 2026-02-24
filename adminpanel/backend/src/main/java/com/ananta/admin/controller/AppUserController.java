@@ -372,60 +372,56 @@ public class AppUserController {
                 return ResponseEntity.badRequest().body(new MessageResponse("UserId is required"));
             }
 
-            // Use native query to avoid LOB issues
-            int updated = entityManager.createNativeQuery(
-                "UPDATE users SET " +
-                "username = COALESCE(:username, username), " +
-                "full_name = COALESCE(:fullName, full_name), " +
-                "bio = :bio, " +
-                "location = :location, " +
-                "gender = :gender, " +
-                "birthday = :birthday, " +
-                "address_line1 = :addressLine1, " +
-                "city = :city, " +
-                "state = :state, " +
-                "country = :country, " +
-                "pin_code = :pinCode, " +
-                "updated_at = CURRENT_TIMESTAMP " +
-                "WHERE user_id = :userId")
-                .setParameter("username", StringUtils.hasText(request.getUsername()) ? request.getUsername().trim() : null)
-                .setParameter("fullName", StringUtils.hasText(request.getFullName()) ? request.getFullName().trim() : null)
-                .setParameter("bio", request.getBio())
-                .setParameter("location", request.getLocation())
-                .setParameter("gender", request.getGender())
-                .setParameter("birthday", request.getBirthday())
-                .setParameter("addressLine1", request.getAddressLine1())
-                .setParameter("city", request.getCity())
-                .setParameter("state", request.getState())
-                .setParameter("country", request.getCountry())
-                .setParameter("pinCode", request.getPinCode())
-                .setParameter("userId", normalizedUserId)
-                .executeUpdate();
-
-            if (updated == 0) {
+            // Find user first
+            Optional<User> userOpt = userRepository.findByUserId(normalizedUserId);
+            if (userOpt.isEmpty()) {
+                userOpt = userRepository.findByUserIdTrimmed(normalizedUserId);
+            }
+            if (userOpt.isEmpty()) {
+                String compactUserId = normalizedUserId.replaceAll("[^A-Za-z0-9]", "");
+                if (StringUtils.hasText(compactUserId)) {
+                    userOpt = userRepository.findByUserIdNormalized(compactUserId);
+                }
+            }
+            
+            if (userOpt.isEmpty()) {
                 return ResponseEntity.status(404).body(new MessageResponse("User not found"));
             }
 
-            // Handle profile image separately
+            User user = userOpt.get();
+            
+            // Update fields
+            if (StringUtils.hasText(request.getUsername())) {
+                user.setUsername(request.getUsername().trim());
+            }
+            if (StringUtils.hasText(request.getFullName())) {
+                user.setFullName(request.getFullName().trim());
+            }
+            user.setBio(request.getBio());
+            user.setLocation(request.getLocation());
+            user.setGender(request.getGender());
+            user.setBirthday(request.getBirthday());
+            user.setAddressLine1(request.getAddressLine1());
+            user.setCity(request.getCity());
+            user.setState(request.getState());
+            user.setCountry(request.getCountry());
+            user.setPinCode(request.getPinCode());
+
+            // Handle profile image
             if (StringUtils.hasText(request.getProfileImage())) {
                 String imageToSave = request.getProfileImage();
                 if (imageToSave.startsWith("data:image")) {
                     String savedPath = saveBase64Image(imageToSave, "profile", normalizedUserId);
                     if (StringUtils.hasText(savedPath)) {
-                        entityManager.createNativeQuery(
-                            "UPDATE users SET profile_image = :img WHERE user_id = :uid")
-                            .setParameter("img", savedPath)
-                            .setParameter("uid", normalizedUserId)
-                            .executeUpdate();
+                        user.setProfileImage(savedPath);
                     }
                 } else if (imageToSave.startsWith("/uploads/") || imageToSave.startsWith("http")) {
-                    entityManager.createNativeQuery(
-                        "UPDATE users SET profile_image = :img WHERE user_id = :uid")
-                        .setParameter("img", imageToSave)
-                        .setParameter("uid", normalizedUserId)
-                        .executeUpdate();
+                    user.setProfileImage(imageToSave);
                 }
             }
+
+            userRepository.save(user);
+            entityManager.flush();
 
             return ResponseEntity.ok(new MessageResponse("Profile updated successfully"));
         } catch (Exception e) {
