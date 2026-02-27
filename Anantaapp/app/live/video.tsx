@@ -37,7 +37,7 @@ export default function VideoLiveScreen() {
   const appId = String(params.appId || '').trim();
   const userId = params.userId as string | undefined;
   // hostUid is the Agora UID the backend assigned to the host.
-  // Viewers need it to subscribe to exactly the host's video stream.
+  // Both host and viewers need it: host joins with it, viewers subscribe to it.
   const hostUid = params.hostUid ? Number(params.hostUid) : 0;
 
   console.log('Video params:', { appId, channelName, token: token?.substring(0, 20), sessionId, hostUid });
@@ -257,64 +257,87 @@ export default function VideoLiveScreen() {
   };
 
   const initAgora = async () => {
+    console.log('=== INIT AGORA START ===');
+    console.log('AppId:', appId);
+    console.log('Token:', token?.substring(0, 30));
+    console.log('Channel:', channelName);
+    console.log('HostUid:', hostUid);
+    console.log('Role:', role);
+    
     if (!appId || appId === 'undefined' || appId === 'null' || !token || !channelName) {
       console.error('Missing params:', { appId, token: !!token, channelName });
-      Alert.alert('Error', `Missing Agora credentials. AppId: ${appId || 'MISSING'}`);
+      Alert.alert('Connection Error', 'Failed to connect to Agora');
       return;
     }
+
     try {
+      console.log('Step 1: Requesting permissions...');
       const hasPermission = await requestMediaPermissions();
       if (!hasPermission) {
+        console.error('Permissions denied');
         Alert.alert('Permission required', 'Camera and microphone permissions are needed.');
         return;
       }
+      console.log('Step 1: Permissions granted');
 
-      console.log('Creating Agora engine with appId:', appId);
+      console.log('Step 2: Creating Agora engine...');
       const engine = await createAgoraEngine(appId);
-      if (!engine) {
-        Alert.alert('Error', 'Unable to initialize video engine');
-        return;
-      }
+      console.log('Step 2: Engine created successfully');
       engineRef.current = engine;
 
-      // IMPORTANT: Set role BEFORE enableVideo so that agoraClient.web.ts
-      // knows the role when deciding whether to create camera/mic tracks.
-      // Viewers (audience) must NOT open camera/mic — it causes a publish
-      // error that prevents onJoinChannelSuccess from ever firing.
+      console.log('Step 3: Setting channel profile...');
       await engine.setChannelProfile(ChannelProfileType.ChannelProfileLiveBroadcasting);
+      console.log('Step 3: Channel profile set');
+      
+      console.log('Step 4: Setting client role...');
       const clientRole = role === 'viewer' ? ClientRoleType.ClientRoleAudience : ClientRoleType.ClientRoleBroadcaster;
       await engine.setClientRole(clientRole);
+      console.log('Step 4: Client role set to', clientRole);
 
-      // enableVideo now skips camera/mic creation for audience role
+      console.log('Step 5: Enabling video...');
       await engine.enableVideo();
+      console.log('Step 5: Video enabled');
 
       if (role === 'host') {
+        console.log('Step 6: Starting preview (host only)...');
         await engine.startPreview();
+        console.log('Step 6: Preview started');
       }
 
+      console.log('Step 7: Registering event handlers...');
       engine.registerEventHandler({
         onJoinChannelSuccess: () => {
+          console.log('[SUCCESS] Joined channel successfully');
           setJoined(true);
         },
         onUserJoined: (_connection: any, uid: number) => {
+          console.log('[EVENT] Remote user joined:', uid);
           setRemoteUid(uid);
         },
         onUserOffline: (_connection: any, uid: number) => {
+          console.log('[EVENT] Remote user offline:', uid);
           setRemoteUid(prev => (prev === uid ? null : prev));
         },
+        onError: (error: any) => {
+          console.error('[ERROR] Agora error:', error);
+        },
       });
+      console.log('Step 7: Event handlers registered');
 
-      console.log('Joining channel:', channelName);
-      await engine.joinChannel(token, channelName, 0, {
+      const joinUid = role === 'host' ? hostUid : 0;
+      console.log('Step 8: Joining channel with UID:', joinUid);
+      await engine.joinChannel(token, channelName, joinUid, {
         clientRoleType: clientRole,
       });
-
-      if (role === 'host') {
-        setTimeout(() => setJoined(true), 1000);
-      }
+      console.log('Step 8: Join channel called successfully');
+      console.log('=== INIT AGORA COMPLETE ===');
     } catch (e: any) {
-      console.error('Agora error:', e);
-      Alert.alert('Error', e.message || 'Unable to start video live');
+      console.error('=== AGORA ERROR ===');
+      console.error('Error message:', e.message);
+      console.error('Error code:', e.code);
+      console.error('Error stack:', e.stack);
+      console.error('Full error:', JSON.stringify(e, null, 2));
+      Alert.alert('Connection Error', 'Failed to connect to Agora');
     }
   };
 
@@ -424,15 +447,14 @@ export default function VideoLiveScreen() {
       keyboardVerticalOffset={0}
     >
       <View style={styles.backgroundImage}>
-        {joined ? (
-          <RtcSurfaceView
-            canvas={{
-              // Host renders local preview (uid=0), viewer renders host's specific uid
-              uid: role === 'host' ? 0 : (hostUid || remoteUid || 0),
-            }}
-            style={styles.videoSurface}
-          />
-        ) : (
+        <RtcSurfaceView
+          canvas={{
+            // Host renders local preview (uid=0), viewer renders host's specific uid
+            uid: role === 'host' ? 0 : (hostUid || remoteUid || 0),
+          }}
+          style={styles.videoSurface}
+        />
+        {!joined && (
           <View style={styles.webPlaceholder}>
             <Text style={styles.webPlaceholderText}>📹</Text>
             <Text style={styles.webPlaceholderSubtext}>Connecting...</Text>

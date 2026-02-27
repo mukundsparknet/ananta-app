@@ -47,7 +47,9 @@ export async function createAgoraEngine(appId: string): Promise<any> {
   agoraClient = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
 
   agoraClient.on('user-published', async (user: any, mediaType: string) => {
+    console.log(`[Agora] User ${user.uid} published ${mediaType}`);
     await agoraClient!.subscribe(user, mediaType);
+    console.log(`[Agora] Subscribed to user ${user.uid} ${mediaType}`);
 
     if (mediaType === 'video') {
       remoteUsers.set(user.uid as number, {
@@ -55,6 +57,7 @@ export async function createAgoraEngine(appId: string): Promise<any> {
         videoTrack: user.videoTrack
       });
       notifyRemoteUsersChanged();
+      console.log(`[Agora] Remote video track added for uid ${user.uid}`);
       eventHandlers?.onUserJoined?.(null, user.uid);
     }
     if (mediaType === 'audio' && user.audioTrack) {
@@ -63,6 +66,7 @@ export async function createAgoraEngine(appId: string): Promise<any> {
         audioTrack: user.audioTrack
       });
       user.audioTrack.play();
+      console.log(`[Agora] Remote audio track playing for uid ${user.uid}`);
     }
   });
 
@@ -185,19 +189,49 @@ export function RtcSurfaceView({ canvas, style }: { canvas: { uid: number }, sty
   React.useEffect(() => {
     if (!containerRef.current) return;
 
+    console.log(`[RtcSurfaceView] Rendering for uid ${canvas.uid}, version ${remoteUsersVersion}`);
+    console.log(`[RtcSurfaceView] localVideoTrack exists:`, !!localVideoTrack);
+    console.log(`[RtcSurfaceView] remoteUsers size:`, remoteUsers.size);
+    console.log(`[RtcSurfaceView] remoteUsers keys:`, Array.from(remoteUsers.keys()));
+
     if (canvas.uid === 0 && localVideoTrack) {
       // Host local preview
-      localVideoTrack.play(containerRef.current);
-      return () => { localVideoTrack?.stop(); };
+      console.log('[RtcSurfaceView] Playing local video track');
+      try {
+        localVideoTrack.play(containerRef.current);
+      } catch (e) {
+        console.error('[RtcSurfaceView] Error playing local track:', e);
+      }
+      return () => { 
+        try {
+          localVideoTrack?.stop(); 
+        } catch (e) {
+          console.error('[RtcSurfaceView] Error stopping local track:', e);
+        }
+      };
     } else if (canvas.uid !== 0) {
       // Viewer watching remote host stream
       const remoteUser = remoteUsers.get(canvas.uid);
+      console.log(`[RtcSurfaceView] Looking for remote uid ${canvas.uid}, found:`, !!remoteUser?.videoTrack);
       if (remoteUser?.videoTrack) {
-        remoteUser.videoTrack.play(containerRef.current);
-        return () => { remoteUser?.videoTrack?.stop(); };
+        console.log(`[RtcSurfaceView] Playing remote video for uid ${canvas.uid}`);
+        try {
+          remoteUser.videoTrack.play(containerRef.current);
+        } catch (e) {
+          console.error('[RtcSurfaceView] Error playing remote track:', e);
+        }
+        return () => { 
+          try {
+            remoteUser?.videoTrack?.stop(); 
+          } catch (e) {
+            console.error('[RtcSurfaceView] Error stopping remote track:', e);
+          }
+        };
+      } else {
+        console.warn(`[RtcSurfaceView] No video track found for uid ${canvas.uid}`);
       }
     }
-  }, [canvas.uid, localVideoTrack]);
+  }, [canvas.uid, localVideoTrack, remoteUsersVersion]);
 
   return React.createElement('div', {
     ref: containerRef,

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Agora Video Test</title>
+
+<script src="https://download.agora.io/sdk/release/AgoraRTC_N.js"></script>
+
+<style>
+body{
+font-family:Arial;
+text-align:center;
+}
+
+#local-player{
+width:640px;
+height:480px;
+margin:auto;
+border:1px solid #ccc;
+}
+
+button{
+padding:10px 20px;
+font-size:16px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>Agora Video Streaming Test</h2>
+
+<button onclick="start()">Start Camera</button>
+
+<br><br>
+
+<div id="local-player"></div>
+
+<script>
+
+const appId = "b6bbf782efa94f8b9894e9b5c1895dfa";
+
+const token = "007eJxTYLin8133/UXlA5559QvZHn0/cn75rex3wmomG5Vic8ojT3MpMCSZJSWlmVsYpaYlWpqkWSRZWliapFommSYbWliapqQlRk9YmNkQyMjgqWjKzMgAgSA+C0NJanEJAwMAx0MgWg==";
+
+const channel = "test";
+
+let client;
+let localTracks;
+
+async function start(){
+
+client = AgoraRTC.createClient({mode:"rtc",codec:"vp8"});
+
+await client.join(appId, channel, token, null);
+
+localTracks = await AgoraRTC.createMicrophoneAndCameraTracks();
+
+localTracks[1].play("local-player");
+
+await client.publish(localTracks);
+
+console.log("Streaming started");
+
+}
+
+</script>
+
+</body>
+</html>

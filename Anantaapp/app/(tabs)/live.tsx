@@ -66,6 +66,7 @@ export default function LiveScreen() {
         userId: String(userId),
         role: 'host',
         hostUserId: String(data.hostUserId || userId),
+        hostUid: String(data.hostUid || '0'),
         hostUsername: String(data.hostUsername || ''),
         hostCountry: String(data.hostCountry || ''),
         hostProfileImage: String(data.hostProfileImage || ''),
