@@ -361,14 +361,16 @@ export default function AudioLiveScreen() {
           <Text style={styles.headerSubtitle}>@{hostUsername} • {hostCountry}</Text>
         </View>
         
-        <TouchableOpacity 
-          style={[styles.followButton, isFollowing && styles.followingButton]} 
-          onPress={handleFollow}
-        >
-          <Text style={styles.followText}>
-            {isFollowing ? 'Following' : 'Follow'}
-          </Text>
-        </TouchableOpacity>
+        {role === 'viewer' && (
+          <TouchableOpacity 
+            style={[styles.followButton, isFollowing && styles.followingButton]} 
+            onPress={handleFollow}
+          >
+            <Text style={styles.followText}>
+              {isFollowing ? 'Following' : 'Follow'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Stats Bar */}
@@ -450,40 +452,60 @@ export default function AudioLiveScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.bottomContainer}
       >
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.messageInput}
-            placeholder="Say something..."
-            placeholderTextColor="rgba(255,255,255,0.6)"
-            value={messageText}
-            onChangeText={setMessageText}
-            onSubmitEditing={sendMessage}
-          />
-          <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-            <Ionicons name="send" size={20} color="white" />
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.actionButtons}>
-          <TouchableOpacity 
-            style={[styles.actionButton, isMuted && styles.mutedButton]}
-            onPress={toggleMute}
-          >
-            <Ionicons 
-              name={isMuted ? "volume-mute" : "volume-high"} 
-              size={20} 
-              color="white" 
-            />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionButton} onPress={endLive}>
-            <Ionicons name="stop-circle" size={20} color="#ff4444" />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
-            <Ionicons name="heart" size={20} color="#ff4444" />
-          </TouchableOpacity>
-        </View>
+        {role === 'host' ? (
+          <>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.messageInput}
+                placeholder="Say something..."
+                placeholderTextColor="rgba(255,255,255,0.6)"
+                value={messageText}
+                onChangeText={setMessageText}
+                onSubmitEditing={sendMessage}
+              />
+              <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+                <Ionicons name="send" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.actionButtons}>
+              <TouchableOpacity 
+                style={[styles.actionButton, isMuted && styles.mutedButton]}
+                onPress={toggleMute}
+              >
+                <Ionicons 
+                  name={isMuted ? "mic-off" : "mic"} 
+                  size={20} 
+                  color="white" 
+                />
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.actionButton} onPress={endLive}>
+                <Ionicons name="stop-circle" size={20} color="#ff4444" />
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <View style={styles.viewerBottomRow}>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.messageInput}
+                placeholder="Say something..."
+                placeholderTextColor="rgba(255,255,255,0.6)"
+                value={messageText}
+                onChangeText={setMessageText}
+                onSubmitEditing={sendMessage}
+              />
+              <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+                <Ionicons name="send" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
+              <Ionicons name="heart" size={20} color="#ff4444" />
+            </TouchableOpacity>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </View>
   );
@@ -676,12 +698,19 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
   inputContainer: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 25,
     paddingHorizontal: 15,
     marginBottom: 15,
+  },
+  viewerBottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    width: '100%',
   },
   messageInput: {
     flex: 1,
