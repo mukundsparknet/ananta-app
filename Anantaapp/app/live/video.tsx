@@ -263,10 +263,23 @@ export default function VideoLiveScreen() {
     }
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
     setLikes(prev => prev + 1);
     setIsLiked(true);
     addFloatingHeart();
+    
+    // Send like to backend
+    if (sessionId) {
+      try {
+        await fetch(`${ENV.API_BASE_URL}/api/app/live/like`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+        });
+      } catch (e) {
+        console.error('Like error:', e);
+      }
+    }
   };
 
   const sendMessage = async () => {

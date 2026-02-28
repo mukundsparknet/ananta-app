@@ -309,7 +309,7 @@ public class AppLiveController {
         LiveSession session = sessionOpt.get();
         Map<String, Object> stats = new HashMap<>();
         stats.put("viewerCount", session.getViewerCount() != null ? session.getViewerCount() : 0);
-        stats.put("likes", 0);
+        stats.put("likes", session.getLikes() != null ? session.getLikes() : 0);
         stats.put("status", session.getStatus());
         return ResponseEntity.ok(stats);
     }
@@ -354,5 +354,27 @@ public class AppLiveController {
 
         List<Map<String, Object>> messages = sessionMessages.getOrDefault(sessionId, new ArrayList<>());
         return ResponseEntity.ok(messages);
+    }
+
+    @PostMapping("/like")
+    @Transactional
+    public ResponseEntity<?> likeSession(@RequestBody Map<String, Object> payload) {
+        String sessionId = asString(payload.get("sessionId"));
+        if (!StringUtils.hasText(sessionId)) {
+            return ResponseEntity.badRequest().body(Collections.singletonMap("message", "sessionId is required"));
+        }
+
+        try {
+            LiveSession session = liveSessionRepository.findBySessionId(sessionId).orElse(null);
+            if (session != null) {
+                Integer currentLikes = session.getLikes() != null ? session.getLikes() : 0;
+                session.setLikes(currentLikes + 1);
+                liveSessionRepository.save(session);
+                return ResponseEntity.ok(Collections.singletonMap("likes", session.getLikes()));
+            }
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Collections.singletonMap("error", e.getMessage()));
+        }
     }
 }

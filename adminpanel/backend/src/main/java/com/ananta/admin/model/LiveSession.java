@@ -35,6 +35,9 @@ public class LiveSession {
     @Column(name = "viewer_count")
     private Integer viewerCount = 0;
 
+    @Column(name = "likes")
+    private Integer likes = 0;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
