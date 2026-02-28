@@ -70,8 +70,28 @@ export default function VideoLiveScreen() {
   const [messageText, setMessageText] = useState('');
   const animatedValues = useRef<{ [key: number]: Animated.Value }>({});
   const [remoteUid, setRemoteUid] = useState<number | null>(null);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const comments: any[] = [];
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, []);
 
   const addFloatingHeart = () => {
     const newHeart = {
@@ -325,7 +345,19 @@ export default function VideoLiveScreen() {
         },
         onUserOffline: (_connection: any, uid: number) => {
           console.log('[EVENT] Remote user offline:', uid);
-          setRemoteUid(prev => (prev === uid ? null : prev));
+          const offlineUid = typeof uid === 'number' ? uid : _connection;
+          setRemoteUid(prev => (prev === offlineUid ? null : prev));
+          if (role === 'viewer' && offlineUid === hostUid) {
+            if (statsIntervalRef.current) {
+              clearInterval(statsIntervalRef.current);
+              statsIntervalRef.current = null;
+            }
+            cleanupAgora().then(() => {
+              Alert.alert('Live Ended', 'The host has left the session.', [
+                { text: 'OK', onPress: () => router.back() }
+              ]);
+            });
+          }
         },
         onError: (error: any) => {
           console.error('[ERROR] Agora error:', error);
@@ -380,10 +412,15 @@ export default function VideoLiveScreen() {
     try {
       const res = await fetch(`${ENV.API_BASE_URL}/api/app/live/stats/${sessionId}`);
       if (res.status === 404) {
-        // Session not found on this backend — stop polling to avoid console spam
         if (statsIntervalRef.current) {
           clearInterval(statsIntervalRef.current);
           statsIntervalRef.current = null;
+        }
+        if (role === 'viewer') {
+          await cleanupAgora();
+          Alert.alert('Live Ended', 'The host has ended this live session.', [
+            { text: 'OK', onPress: () => router.back() }
+          ]);
         }
         return;
       }
@@ -394,6 +431,16 @@ export default function VideoLiveScreen() {
         }
         if (typeof data.likes === 'number') {
           setLikes(data.likes);
+        }
+        if (role === 'viewer' && data.status === 'ended') {
+          if (statsIntervalRef.current) {
+            clearInterval(statsIntervalRef.current);
+            statsIntervalRef.current = null;
+          }
+          await cleanupAgora();
+          Alert.alert('Live Ended', 'The host has ended this live session.', [
+            { text: 'OK', onPress: () => router.back() }
+          ]);
         }
       }
     } catch { }
@@ -509,7 +556,11 @@ export default function VideoLiveScreen() {
             </>
           )}
           {role === 'host' && (
-            <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end' }}>
+            <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={styles.liveBadge}>
+                <Animated.View style={[styles.liveCircle, { transform: [{ scale: pulseAnim }] }]} />
+                <Text style={styles.liveText}>LIVE</Text>
+              </View>
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={endLive}
@@ -968,5 +1019,26 @@ const styles = StyleSheet.create({
   heartEmoji: {
     fontSize: 24,
     color: '#FF6B6B',
+  },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 8,
+  },
+  liveCircle: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF0000',
+  },
+  liveText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
 })

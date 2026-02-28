@@ -72,9 +72,17 @@ export async function createAgoraEngine(appId: string): Promise<any> {
   });
 
   agoraClient.on('user-unpublished', (user: any) => {
+    console.log(`[Agora] User ${user.uid} unpublished`);
     remoteUsers.delete(user.uid as number);
     notifyRemoteUsersChanged();
-    eventHandlers?.onUserOffline?.(user.uid);
+    eventHandlers?.onUserOffline?.(null, user.uid);
+  });
+
+  agoraClient.on('user-left', (user: any) => {
+    console.log(`[Agora] User ${user.uid} left`);
+    remoteUsers.delete(user.uid as number);
+    notifyRemoteUsersChanged();
+    eventHandlers?.onUserOffline?.(null, user.uid);
   });
 
   return {
