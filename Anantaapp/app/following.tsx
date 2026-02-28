@@ -32,17 +32,14 @@ export default function FollowingScreen() {
   const mapApiFollowing = (raw: any[]): any[] => {
     console.log('[Following] mapApiFollowing raw:', raw);
     return raw.map((item, index) => {
-      const rawAvatar =
-        item.avatar ??
-        item.profileImage ??
-        initialFollowing[index % initialFollowing.length].avatar;
-      const avatar = resolveAvatarUri(rawAvatar);
+      const rawAvatar = item.profileImage ?? item.avatar ?? '';
+      const avatar = resolveAvatarUri(rawAvatar) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face';
       return {
         id: String(item.userId ?? item.id ?? index),
-        name: item.name ?? item.fullName ?? 'User',
-        username: item.username ? `@${item.username}` : (item.handle ?? '@user'),
+        name: item.fullName ?? item.name ?? item.username ?? 'User',
+        username: item.username ? `@${item.username}` : '@user',
         avatar,
-        isFollowing: item.isFollowing === undefined ? true : !!item.isFollowing,
+        isFollowing: true,
       };
     });
   };

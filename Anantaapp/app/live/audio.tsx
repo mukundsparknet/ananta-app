@@ -92,28 +92,19 @@ export default function AudioLiveScreen() {
 
   const handleFollow = async () => {
     if (role !== 'viewer') return;
-    if (!userId || !hostUserId) {
-      setIsFollowing(prev => !prev);
-      return;
-    }
+    if (!userId || !hostUserId) return;
     try {
       const response = await fetch(`${ENV.API_BASE_URL}/api/app/follow/toggle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ followerId: userId, followeeId: hostUserId }),
       });
-      if (!response.ok) {
-        setIsFollowing(prev => !prev);
-        return;
-      }
-      const data = await response.json();
-      if (typeof data.isFollowing === 'boolean') {
+      if (response.ok) {
+        const data = await response.json();
         setIsFollowing(data.isFollowing);
-      } else {
-        setIsFollowing(prev => !prev);
       }
-    } catch {
-      setIsFollowing(prev => !prev);
+    } catch (e) {
+      console.error('Follow error:', e);
     }
   };
 
@@ -210,6 +201,20 @@ export default function AudioLiveScreen() {
     } catch { }
   };
 
+  const checkFollowStatus = async () => {
+    if (role !== 'viewer' || !userId || !hostUserId) return;
+    try {
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/profile/${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.followingList)) {
+          const isFollowingHost = data.followingList.some((f: any) => f.userId === hostUserId);
+          setIsFollowing(isFollowingHost);
+        }
+      }
+    } catch { }
+  };
+
   const requestAudioPermission = async () => {
     if (Platform.OS !== 'android') {
       return true;
@@ -278,6 +283,7 @@ export default function AudioLiveScreen() {
     initAgora();
     loadSessionStats();
     loadMessages();
+    checkFollowStatus();
     statsIntervalRef.current = setInterval(loadSessionStats, 5000);
     messagesIntervalRef.current = setInterval(loadMessages, 2000);
     timerIntervalRef.current = setInterval(() => {

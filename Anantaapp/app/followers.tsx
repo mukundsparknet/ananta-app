@@ -35,18 +35,13 @@ export default function FollowersScreen() {
     console.log('[Followers] mapApiFollowers raw:', raw);
     return raw.map((item, index) => {
       const rawId = String(item.userId ?? item.id ?? index);
-      const name = item.name ?? item.fullName ?? item.username ?? 'User';
+      const name = item.fullName ?? item.name ?? item.username ?? 'User';
       const username =
         item.username && String(item.username).trim().length > 0
           ? `@${item.username}`
-          : item.handle
-          ? item.handle
           : '@user';
-      const rawAvatar =
-        item.avatar ??
-        item.profileImage ??
-        initialFollowers[index % initialFollowers.length].avatar;
-      const avatar = resolveAvatarUri(rawAvatar);
+      const rawAvatar = item.profileImage ?? item.avatar ?? '';
+      const avatar = resolveAvatarUri(rawAvatar) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face';
       return {
         id: rawId,
         name,
