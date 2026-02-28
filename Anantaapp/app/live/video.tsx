@@ -456,13 +456,15 @@ export default function VideoLiveScreen() {
       keyboardVerticalOffset={0}
     >
       <View style={styles.backgroundImage}>
-        <RtcSurfaceView
-          canvas={{
-            // Host renders local preview (uid=0), viewer renders host's specific uid
-            uid: role === 'host' ? 0 : (hostUid || remoteUid || 0),
-          }}
-          style={styles.videoSurface}
-        />
+        {joined && (
+          <RtcSurfaceView
+            canvas={{
+              uid: role === 'host' ? 0 : (remoteUid || hostUid || 0),
+            }}
+            style={styles.videoSurface}
+            zOrderMediaOverlay={false}
+          />
+        )}
         {!joined && (
           <View style={styles.webPlaceholder}>
             <Text style={styles.webPlaceholderText}>📹</Text>
@@ -673,7 +675,13 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   videoSurface: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
   },
   webPlaceholder: {
     flex: 1,
