@@ -51,6 +51,16 @@ export default function OTPScreen() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, otp: code }),
       });
+      
+      if (response.status === 403) {
+        const err = await response.json().catch(() => null);
+        const message = err?.message || 'Account access denied';
+        Alert.alert('Account Restricted', message, [
+          { text: 'OK', onPress: () => router.replace('/auth/login') }
+        ]);
+        return;
+      }
+      
       if (!response.ok) {
         const err = await response.json().catch(() => null);
         const message = err?.message || 'Invalid OTP';

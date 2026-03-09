@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -77,6 +78,78 @@ public class AppUserController {
         response.put("timestamp", System.currentTimeMillis());
         response.put("service", "ANANTA Backend");
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/check-account-status/{userId}")
+    public ResponseEntity<?> checkAccountStatus(@PathVariable String userId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String normalizedUserId = userId == null ? "" : userId.trim();
+            if (!StringUtils.hasText(normalizedUserId)) {
+                response.put("status", "error");
+                response.put("message", "Invalid user ID");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            User user = userRepository.findByUserId(normalizedUserId).orElse(null);
+            if (user == null) {
+                user = userRepository.findByUserIdTrimmed(normalizedUserId).orElse(null);
+            }
+            if (user == null) {
+                String compactUserId = normalizedUserId.replaceAll("[^A-Za-z0-9]", "");
+                if (StringUtils.hasText(compactUserId)) {
+                    user = userRepository.findByUserIdNormalized(compactUserId).orElse(null);
+                }
+            }
+
+            if (user == null) {
+                response.put("status", "error");
+                response.put("message", "User not found");
+                return ResponseEntity.status(404).body(response);
+            }
+
+            // Check if banned and if ban has expired
+            if (user.isBanned() && user.getBanUntil() != null) {
+                if (LocalDateTime.now().isAfter(user.getBanUntil())) {
+                    user.setBanned(false);
+                    user.setBanUntil(null);
+                    user.setBanReason(null);
+                    userRepository.save(user);
+                }
+            }
+
+            response.put("status", "ok");
+            response.put("isBlocked", user.isBlocked());
+            response.put("isBanned", user.isBanned());
+            response.put("banReason", user.getBanReason());
+            response.put("banUntil", user.getBanUntil() != null ? user.getBanUntil().toString() : null);
+            
+            if (user.isBlocked()) {
+                response.put("message", "Your account has been blocked. Please contact support.");
+                response.put("shouldLogout", true);
+            } else if (user.isBanned()) {
+                String banMessage = "Your account is banned";
+                if (user.getBanReason() != null) {
+                    banMessage += ": " + user.getBanReason();
+                }
+                if (user.getBanUntil() != null) {
+                    banMessage += ". Ban expires on: " + user.getBanUntil().toString();
+                } else {
+                    banMessage += " permanently.";
+                }
+                response.put("message", banMessage);
+                response.put("shouldLogout", true);
+            } else {
+                response.put("message", "Account is active");
+                response.put("shouldLogout", false);
+            }
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "Error checking account status");
+            return ResponseEntity.status(500).body(response);
+        }
     }
 
     @GetMapping("/check-username")
@@ -153,6 +226,38 @@ public class AppUserController {
         }
         if (user == null) {
             user = findUserByPhoneNative(phone);
+        }
+
+        // Check if user is blocked
+        if (user != null && user.isBlocked()) {
+            return ResponseEntity.status(403).body(new MessageResponse("Your account has been blocked. Please contact support."));
+        }
+
+        // Check if user is banned
+        if (user != null && user.isBanned()) {
+            // Check if ban has expired
+            if (user.getBanUntil() != null) {
+                if (LocalDateTime.now().isAfter(user.getBanUntil())) {
+                    // Ban expired, unban the user
+                    user.setBanned(false);
+                    user.setBanUntil(null);
+                    user.setBanReason(null);
+                    userRepository.save(user);
+                } else {
+                    // Ban still active
+                    String banMessage = "Your account is banned";
+                    if (user.getBanReason() != null) {
+                        banMessage += ": " + user.getBanReason();
+                    }
+                    if (user.getBanUntil() != null) {
+                        banMessage += ". Ban expires on: " + user.getBanUntil().toString();
+                    }
+                    return ResponseEntity.status(403).body(new MessageResponse(banMessage));
+                }
+            } else {
+                // Permanent ban
+                return ResponseEntity.status(403).body(new MessageResponse("Your account has been permanently banned. Please contact support."));
+            }
         }
 
         String userId = user != null ? user.getUserId() : "";
@@ -563,6 +668,16 @@ public class AppUserController {
                     user = u;
                 }
             } catch (Exception ignored) {
+            }
+        }
+
+        // Check if user is banned and if ban has expired
+        if (user != null && user.isBanned() && user.getBanUntil() != null) {
+            if (LocalDateTime.now().isAfter(user.getBanUntil())) {
+                user.setBanned(false);
+                user.setBanUntil(null);
+                user.setBanReason(null);
+                userRepository.save(user);
             }
         }
 

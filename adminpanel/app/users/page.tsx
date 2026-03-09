@@ -33,12 +33,19 @@ export default function UsersPage() {
     }
   };
 
-  const handleUserAction = async (userId: string, action: string, value: boolean, id?: number) => {
+  const handleUserAction = async (userId: string, action: string, value: boolean, id?: number, banDays?: number) => {
     try {
       const token = localStorage.getItem('token');
+      const payload: any = { id, userId, [action]: value };
+      
+      // If banning and banDays is provided, include it
+      if (action === 'isBanned' && value && banDays) {
+        payload.banDays = banDays;
+      }
+      
       await axios.patch(
         '/api/admin/users',
-        { id, userId, [action]: value },
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       fetchUsers();
@@ -46,6 +53,18 @@ export default function UsersPage() {
       console.error('Error updating user:', error?.response?.data || error);
       alert('Error updating user');
     }
+  };
+
+  const handleBanUser = async (userId: string, id?: number) => {
+    const banDaysInput = prompt('Enter number of days to ban (leave empty for permanent ban):');
+    const banDays = banDaysInput ? parseInt(banDaysInput) : 0;
+    
+    if (banDaysInput && isNaN(banDays)) {
+      alert('Please enter a valid number');
+      return;
+    }
+    
+    await handleUserAction(userId, 'isBanned', true, id, banDays);
   };
 
   const handleDeleteUser = async (userId: string) => {
@@ -227,7 +246,13 @@ export default function UsersPage() {
                         {user.isBlocked ? 'Unblock' : 'Block'}
                       </button>
                       <button 
-                        onClick={() => handleUserAction(user.userId, 'isBanned', !user.isBanned, user.id)}
+                        onClick={() => {
+                          if (user.isBanned) {
+                            handleUserAction(user.userId, 'isBanned', false, user.id);
+                          } else {
+                            handleBanUser(user.userId, user.id);
+                          }
+                        }}
                         style={{
                           padding:'8px 16px',
                           border:'none',

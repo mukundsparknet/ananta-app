@@ -2,10 +2,12 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { useEffect } from 'react';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { ProfileProvider } from '../contexts/ProfileContext';
 import { ThemeProvider as CustomThemeProvider } from '../contexts/ThemeContext';
+import { startAccountStatusCheck, stopAccountStatusCheck } from '../utils/accountStatus';
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
@@ -13,6 +15,16 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+
+  useEffect(() => {
+    // Start checking account status when app loads
+    startAccountStatusCheck();
+
+    // Cleanup on unmount
+    return () => {
+      stopAccountStatusCheck();
+    };
+  }, []);
 
   return (
     <CustomThemeProvider>

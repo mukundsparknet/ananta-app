@@ -61,6 +61,12 @@ public class User {
     @Column(name = "is_banned")
     private boolean isBanned = false;
 
+    @Column(name = "ban_until")
+    private LocalDateTime banUntil;
+
+    @Column(name = "ban_reason")
+    private String banReason;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

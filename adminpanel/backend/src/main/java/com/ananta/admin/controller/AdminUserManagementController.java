@@ -5,10 +5,15 @@ import com.ananta.admin.model.User;
 import com.ananta.admin.payload.MessageResponse;
 import com.ananta.admin.repository.KYCRepository;
 import com.ananta.admin.repository.UserRepository;
+import com.ananta.admin.repository.FollowRepository;
+import com.ananta.admin.repository.WalletRepository;
+import com.ananta.admin.repository.WalletTransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +35,15 @@ public class AdminUserManagementController {
 
     @Autowired
     private KYCRepository kycRepository;
+
+    @Autowired
+    private FollowRepository followRepository;
+
+    @Autowired
+    private WalletRepository walletRepository;
+
+    @Autowired
+    private WalletTransactionRepository walletTransactionRepository;
 
     @GetMapping
     public Map<String, Object> getUsers() {
@@ -74,6 +88,15 @@ public class AdminUserManagementController {
             return ResponseEntity.status(404).body(new MessageResponse("User not found"));
         }
 
+        // Check if user is currently banned and if ban has expired
+        if (user.isBanned() && user.getBanUntil() != null) {
+            if (LocalDateTime.now().isAfter(user.getBanUntil())) {
+                user.setBanned(false);
+                user.setBanUntil(null);
+                user.setBanReason(null);
+            }
+        }
+
         if (payload.containsKey("isBlocked")) {
             Object value = payload.get("isBlocked");
             if (value instanceof Boolean) {
@@ -83,7 +106,35 @@ public class AdminUserManagementController {
         if (payload.containsKey("isBanned")) {
             Object value = payload.get("isBanned");
             if (value instanceof Boolean) {
-                user.setBanned((Boolean) value);
+                boolean banned = (Boolean) value;
+                user.setBanned(banned);
+                
+                if (banned) {
+                    // Get ban days from payload
+                    Object banDaysObj = payload.get("banDays");
+                    int banDays = 0;
+                    if (banDaysObj instanceof Number) {
+                        banDays = ((Number) banDaysObj).intValue();
+                    } else if (banDaysObj instanceof String) {
+                        try {
+                            banDays = Integer.parseInt(((String) banDaysObj).trim());
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                    
+                    if (banDays > 0) {
+                        user.setBanUntil(LocalDateTime.now().plusDays(banDays));
+                        user.setBanReason("Banned for " + banDays + " days");
+                    } else {
+                        // Permanent ban
+                        user.setBanUntil(null);
+                        user.setBanReason("Permanently banned");
+                    }
+                } else {
+                    // Unban
+                    user.setBanUntil(null);
+                    user.setBanReason(null);
+                }
             }
         }
 
@@ -194,6 +245,7 @@ public class AdminUserManagementController {
     }
 
     @DeleteMapping("/{userId}")
+    @Transactional
     public ResponseEntity<?> deleteUser(@PathVariable String userId) {
         String normalizedUserId = userId == null ? "" : userId.trim();
         String compactUserId = normalizedUserId.replaceAll("[^A-Za-z0-9]", "");
@@ -209,17 +261,34 @@ public class AdminUserManagementController {
             return ResponseEntity.status(404).body(new MessageResponse("User not found"));
         }
 
-        user.setBlocked(true);
-        user.setBanned(true);
-        userRepository.save(user);
-
-        kycRepository.findByUserId(normalizedUserId).ifPresent(kycRepository::delete);
-        kycRepository.findByUserIdTrimmed(normalizedUserId).ifPresent(kycRepository::delete);
-        if (!compactUserId.isEmpty()) {
-            kycRepository.findByUserIdNormalized(compactUserId).ifPresent(kycRepository::delete);
+        try {
+            // Delete all related data
+            String userIdToDelete = user.getUserId();
+            
+            // Delete wallet transactions
+            walletTransactionRepository.findByUserId(userIdToDelete).forEach(walletTransactionRepository::delete);
+            
+            // Delete wallet
+            walletRepository.findByUserId(userIdToDelete).ifPresent(walletRepository::delete);
+            
+            // Delete follows (both as follower and followee)
+            followRepository.findByFollowerId(userIdToDelete).forEach(followRepository::delete);
+            followRepository.findByFolloweeId(userIdToDelete).forEach(followRepository::delete);
+            
+            // Delete KYC records
+            kycRepository.findByUserId(userIdToDelete).ifPresent(kycRepository::delete);
+            kycRepository.findByUserIdTrimmed(userIdToDelete).ifPresent(kycRepository::delete);
+            if (!compactUserId.isEmpty()) {
+                kycRepository.findByUserIdNormalized(compactUserId).ifPresent(kycRepository::delete);
+            }
+            
+            // Finally delete the user
+            userRepository.delete(user);
+            
+            return ResponseEntity.ok(new MessageResponse("User permanently deleted"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new MessageResponse("Error deleting user: " + e.getMessage()));
         }
-
-        return ResponseEntity.ok(new MessageResponse("User deleted successfully"));
     }
 
     private String normalizeUserIdValue(String value) {

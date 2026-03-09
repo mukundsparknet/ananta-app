@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface WalletTransactionRepository extends JpaRepository<WalletTransaction, Long> {
+    List<WalletTransaction> findByUserId(String userId);
+    
     List<WalletTransaction> findTop20ByUserIdOrderByCreatedAtDesc(String userId);
 
     Optional<WalletTransaction> findFirstByUserIdAndTypeAndAmountOrderByCreatedAtDesc(
