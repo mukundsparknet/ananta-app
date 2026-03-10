@@ -119,24 +119,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 Wallet & Gifts
               </Link>
               
-              <Link href="/app-settings" style={{
-                display:'flex',
-                alignItems:'center',
-                padding:'12px 24px',
-                textDecoration:'none',
-                color: pathname==='/app-settings' ? '#3182ce' : '#4a5568',
-                background: pathname==='/app-settings' ? '#ebf8ff' : 'transparent',
-                borderRight: pathname==='/app-settings' ? '3px solid #3182ce' : '3px solid transparent',
-                fontWeight: pathname==='/app-settings' ? 600 : 500,
-                fontSize:15
-              }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{marginRight:12}}>
-                  <path d="M12 8a4 4 0 100 8 4 4 0 000-8z"/>
-                  <path d="M4.93 6.21a1 1 0 011.32-.48l1.12.45a7.03 7.03 0 011.5-.87l.26-1.19A1 1 0 0110.1 3h3.8a1 1 0 01.98.79l.26 1.19a7.03 7.03 0 011.5.87l1.12-.45a1 1 0 011.32.48l1.9 3.29a1 1 0 01-.34 1.35l-1.03.66a6.96 6.96 0 010 1.74l1.03.66a1 1 0 01.34 1.35l-1.9 3.29a1 1 0 01-1.32.48l-1.12-.45a7.03 7.03 0 01-1.5.87l-.26 1.19a1 1 0 01-.98.79h-3.8a1 1 0 01-.98-.79l-.26-1.19a7.03 7.03 0 01-1.5-.87l-1.12.45a1 1 0 01-1.32-.48l-1.9-3.29a1 1 0 01.34-1.35l1.03-.66a6.96 6.96 0 010-1.74l-1.03-.66a1 1 0 01-.34-1.35l1.9-3.29z"/>
-                </svg>
-                App Settings
-              </Link>
-              
               <Link href="/level-management" style={{
                 display:'flex',
                 alignItems:'center',
@@ -153,6 +135,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <path d="M17.707 7.293a1 1 0 010 1.414L11.414 15l-2.121-2.121a1 1 0 111.414-1.414L12 12.757l5.293-5.293a1 1 0 011.414 0z"/>
                 </svg>
                 Level Management
+              </Link>
+              
+              <Link href="/daily-tasks" style={{
+                display:'flex',
+                alignItems:'center',
+                padding:'12px 24px',
+                textDecoration:'none',
+                color: pathname==='/daily-tasks' ? '#3182ce' : '#4a5568',
+                background: pathname==='/daily-tasks' ? '#ebf8ff' : 'transparent',
+                borderRight: pathname==='/daily-tasks' ? '3px solid #3182ce' : '3px solid transparent',
+                fontWeight: pathname==='/daily-tasks' ? 600 : 500,
+                fontSize:15
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{marginRight:12}}>
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Daily Tasks
               </Link>
 
               <Link href="/hero" style={{
@@ -188,6 +187,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 KYC Verification
+              </Link>
+              
+              <Link href="/app-settings" style={{
+                display:'flex',
+                alignItems:'center',
+                padding:'12px 24px',
+                textDecoration:'none',
+                color: pathname==='/app-settings' ? '#3182ce' : '#4a5568',
+                background: pathname==='/app-settings' ? '#ebf8ff' : 'transparent',
+                borderRight: pathname==='/app-settings' ? '3px solid #3182ce' : '3px solid transparent',
+                fontWeight: pathname==='/app-settings' ? 600 : 500,
+                fontSize:15
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{marginRight:12}}>
+                  <path d="M12 8a4 4 0 100 8 4 4 0 000-8z"/>
+                  <path d="M4.93 6.21a1 1 0 011.32-.48l1.12.45a7.03 7.03 0 011.5-.87l.26-1.19A1 1 0 0110.1 3h3.8a1 1 0 01.98.79l.26 1.19a7.03 7.03 0 011.5.87l1.12-.45a1 1 0 011.32.48l1.9 3.29a1 1 0 01-.34 1.35l-1.03.66a6.96 6.96 0 010 1.74l1.03.66a1 1 0 01.34 1.35l-1.9 3.29a1 1 0 01-1.32.48l-1.12-.45a7.03 7.03 0 01-1.5.87l-.26 1.19a1 1 0 01-.98.79h-3.8a1 1 0 01-.98-.79l-.26-1.19a7.03 7.03 0 01-1.5-.87l-1.12.45a1 1 0 01-1.32-.48l-1.9-3.29a1 1 0 01.34-1.35l1.03-.66a6.96 6.96 0 010-1.74l-1.03-.66a1 1 0 01-.34-1.35l1.9-3.29z"/>
+                </svg>
+                App Settings
               </Link>
             </nav>
           </div>
