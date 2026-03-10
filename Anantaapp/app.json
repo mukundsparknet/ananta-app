@@ -27,8 +27,10 @@
       "package": "com.techvivek32.Ananta",
       "permissions": [
         "CAMERA",
-        "RECORD_AUDIO"
-      ]
+        "RECORD_AUDIO",
+        "INTERNET"
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",
@@ -50,7 +52,13 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.276328703341-bddjagcvkurna9s05qppc3bev2sfmop1"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -193,6 +193,94 @@ public class AppUserController {
         }
     }
 
+    @PostMapping("/google-login")
+    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String name = request.get("name");
+        String profileImage = request.get("profileImage");
+        
+        if (!StringUtils.hasText(email)) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Email is required"));
+        }
+        
+        try {
+            // Check if user exists by email
+            User user = userRepository.findByEmail(email.trim()).orElse(null);
+            
+            if (user != null) {
+                // Check if user is blocked
+                if (user.isBlocked()) {
+                    return ResponseEntity.status(403).body(new MessageResponse("Your account has been blocked. Please contact support."));
+                }
+                
+                // Check if user is banned
+                if (user.isBanned()) {
+                    if (user.getBanUntil() != null) {
+                        if (LocalDateTime.now().isAfter(user.getBanUntil())) {
+                            user.setBanned(false);
+                            user.setBanUntil(null);
+                            user.setBanReason(null);
+                            userRepository.save(user);
+                        } else {
+                            String banMessage = "Your account is banned";
+                            if (user.getBanReason() != null) {
+                                banMessage += ": " + user.getBanReason();
+                            }
+                            banMessage += ". Ban expires on: " + user.getBanUntil().toString();
+                            return ResponseEntity.status(403).body(new MessageResponse(banMessage));
+                        }
+                    } else {
+                        return ResponseEntity.status(403).body(new MessageResponse("Your account has been permanently banned. Please contact support."));
+                    }
+                }
+                
+                // User exists and is active - return user info for home redirect
+                KYC kyc = findKycByUserIdLoose(user.getUserId());
+                String kycStatus = kyc != null && kyc.getStatus() != null ? kyc.getStatus().name() : "NONE";
+                boolean hasProfile = StringUtils.hasText(user.getFullName());
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("userId", user.getUserId());
+                response.put("email", user.getEmail());
+                response.put("kycStatus", kycStatus);
+                response.put("hasProfile", hasProfile);
+                response.put("redirectTo", "home");
+                return ResponseEntity.ok(response);
+            } else {
+                // User doesn't exist - create new user and redirect to profile
+                User newUser = new User();
+                newUser.setEmail(email.trim());
+                newUser.setUserId(generateUserId());
+                newUser.setPhone(""); // Set empty phone for Google users
+                
+                if (StringUtils.hasText(name)) {
+                    newUser.setUsername(name.trim());
+                    newUser.setFullName(name.trim());
+                } else {
+                    String username = email.substring(0, email.indexOf('@'));
+                    newUser.setUsername(username);
+                    newUser.setFullName(username);
+                }
+                
+                if (StringUtils.hasText(profileImage)) {
+                    newUser.setProfileImage(profileImage);
+                }
+                
+                userRepository.save(newUser);
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("userId", newUser.getUserId());
+                response.put("email", newUser.getEmail());
+                response.put("kycStatus", "NONE");
+                response.put("hasProfile", false);
+                response.put("redirectTo", "profile");
+                return ResponseEntity.ok(response);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new MessageResponse("Error processing Google login: " + e.getMessage()));
+        }
+    }
+
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody OtpVerifyRequest request) {
         if (!StringUtils.hasText(request.getPhone()) || !StringUtils.hasText(request.getOtp())) {
@@ -443,6 +531,11 @@ public class AppUserController {
         user.setUsername(username);
         user.setFullName(fullName);
         user.setEmail(request.getEmail().trim());
+        if (StringUtils.hasText(request.getPhone())) {
+            user.setPhone(request.getPhone().trim());
+        } else {
+            user.setPhone(""); // Set empty phone if not provided
+        }
         user.setGender(request.getGender());
         user.setBirthday(request.getBirthday());
         user.setBio(request.getBio());

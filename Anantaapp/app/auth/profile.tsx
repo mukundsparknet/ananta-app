@@ -18,13 +18,15 @@ import { ENV } from '@/config/env';
 export default function ProfileScreen() {
   const params = useLocalSearchParams();
   const userId = typeof params.userId === 'string' ? params.userId : '';
+  const prefilledEmail = typeof params.email === 'string' ? params.email : '';
   const { updateProfile } = useProfile();
   const { isDark } = useTheme();
   const progressAnim = useRef(new Animated.Value(0)).current;
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [userName, setUserName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(prefilledEmail);
+  const [phone, setPhone] = useState(''); // Add phone field
   const [gender, setGender] = useState('');
   const [bio, setBio] = useState('');
   const [location, setLocation] = useState('');
@@ -81,8 +83,12 @@ export default function ProfileScreen() {
 
   const isBackImageRequired = documentType !== 'Passport';
   const isFormValid =
-    userName.trim().length > 0 &&
+    userName.trim().length >= 3 &&
+    /^[a-zA-Z0-9_]+$/.test(userName.trim()) &&
     email.trim().length > 0 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
+    gender &&
+    birthday &&
     documentType &&
     documentNumber.trim().length > 0 &&
     frontImage &&
@@ -290,6 +296,40 @@ export default function ProfileScreen() {
         }
         const res = await fetch(uri);
         const blob = await res.blob();
+        
+        // Compress image if too large
+        if (blob.size > 500000) { // 500KB limit
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const img = new Image();
+          
+          return new Promise<string>((resolve) => {
+            img.onload = () => {
+              const maxWidth = 800;
+              const maxHeight = 600;
+              let { width, height } = img;
+              
+              if (width > height) {
+                if (width > maxWidth) {
+                  height = (height * maxWidth) / width;
+                  width = maxWidth;
+                }
+              } else {
+                if (height > maxHeight) {
+                  width = (width * maxHeight) / height;
+                  height = maxHeight;
+                }
+              }
+              
+              canvas.width = width;
+              canvas.height = height;
+              ctx?.drawImage(img, 0, 0, width, height);
+              resolve(canvas.toDataURL('image/jpeg', 0.7));
+            };
+            img.src = uri;
+          });
+        }
+        
         const dataUrl = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
@@ -326,6 +366,7 @@ export default function ProfileScreen() {
         userId,
         username: userName.trim(),
         email: email.trim(),
+        phone: phone.trim(),
         fullName: name.trim().length > 0 ? name.trim() : userName.trim(),
         gender,
         birthday,
@@ -421,10 +462,14 @@ export default function ProfileScreen() {
             />
             <TextInput
               style={[styles.input, { color: isDark ? 'white' : '#333' }]}
-              placeholder="Username"
+              placeholder="Username (min 3 chars, letters/numbers only)"
               placeholderTextColor={isDark ? '#888' : '#666'}
               value={userName}
-              onChangeText={setUserName}
+              onChangeText={(text) => {
+                const filtered = text.replace(/[^a-zA-Z0-9_]/g, '');
+                setUserName(filtered);
+              }}
+              maxLength={20}
             />
           </View>
           
@@ -441,6 +486,22 @@ export default function ProfileScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              editable={!prefilledEmail} // Disable editing if email is pre-filled from Google
+            />
+          </View>
+          
+          <View style={[styles.inputContainer, { backgroundColor: isDark ? '#333' : '#f8f9fa', borderColor: isDark ? '#555' : '#e9ecef' }]}>
+            <Image 
+              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/724/724664.png' }} 
+              style={[styles.iconImage, { tintColor: isDark ? '#555' : Colors.light.primary }]} 
+            />
+            <TextInput
+              style={[styles.input, { color: isDark ? 'white' : '#333' }]}
+              placeholder="Phone Number"
+              placeholderTextColor={isDark ? '#888' : '#666'}
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
             />
           </View>
           

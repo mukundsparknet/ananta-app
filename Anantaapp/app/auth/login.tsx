@@ -6,36 +6,94 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Alert, Image, ImageBackground, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, StatusBar, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { GoogleAuthService } from '../../services/GoogleAuthService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const [phone, setPhone] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_700Bold,
   });
 
-  const handleGoogleSignIn = () => {
-    Alert.alert(
-      'Google Sign In',
-      'Choose your Google account',
-      [
-        {
-          text: 'user@gmail.com',
-          onPress: () => {
-            Alert.alert('Success', 'Signed in successfully!', [
-              { text: 'OK', onPress: () => router.push('/(tabs)') }
-            ]);
+  // Handle Google OAuth callback on page load
+  useEffect(() => {
+    const handleGoogleCallback = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      
+      if (code && !isLoading) {
+        setIsLoading(true);
+        try {
+          const googleUser = await GoogleAuthService.signIn();
+          const authResult = await GoogleAuthService.authenticateWithBackend(googleUser);
+          
+          await AsyncStorage.setItem('userId', authResult.userId);
+          await AsyncStorage.setItem('userEmail', authResult.email);
+          
+          if (authResult.redirectTo === 'home') {
+            router.replace('/(tabs)');
+          } else {
+            router.replace({ 
+              pathname: '/auth/profile', 
+              params: { 
+                userId: authResult.userId,
+                email: authResult.email 
+              } 
+            });
           }
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel'
+        } catch (error: any) {
+          Alert.alert('Google Sign In Failed', error.message || 'Something went wrong');
+        } finally {
+          setIsLoading(false);
         }
-      ]
-    );
+      }
+    };
+    
+    if (Platform.OS === 'web') {
+      handleGoogleCallback();
+    }
+  }, []);
+
+  const handleGoogleSignIn = async () => {
+    if (isLoading) return;
+    
+    setIsLoading(true);
+    try {
+      // Sign in with Google
+      const googleUser = await GoogleAuthService.signIn();
+      
+      // Authenticate with backend
+      const authResult = await GoogleAuthService.authenticateWithBackend(googleUser);
+      
+      // Store user data
+      await AsyncStorage.setItem('userId', authResult.userId);
+      await AsyncStorage.setItem('userEmail', authResult.email);
+      
+      // Navigate based on backend response
+      if (authResult.redirectTo === 'home') {
+        Alert.alert('Welcome Back!', 'Signed in successfully!', [
+          { text: 'OK', onPress: () => router.replace('/(tabs)') }
+        ]);
+      } else {
+        // New user - redirect to profile setup
+        router.replace({ 
+          pathname: '/auth/profile', 
+          params: { 
+            userId: authResult.userId,
+            email: authResult.email 
+          } 
+        });
+      }
+    } catch (error: any) {
+      Alert.alert('Google Sign In Failed', error.message || 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGetOtp = () => {
@@ -125,18 +183,28 @@ export default function LoginScreen() {
                   </View>
                   
                   <TouchableOpacity 
-                    style={styles.googleButton}
+                    style={[styles.googleButton, { opacity: isLoading ? 0.7 : 1 }]}
                     onPress={handleGoogleSignIn}
+                    disabled={isLoading}
                   >
                     <LinearGradient
                       colors={['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.9)']}
                       style={styles.googleGradient}
                     >
-                      <Image 
-                        source={require('@/assets/images/Google-icon.png')}
-                        style={styles.googleIcon}
-                      />
-                      <ThemedText style={styles.googleText}>Continue with Google</ThemedText>
+                      {isLoading ? (
+                        <>
+                          <View style={styles.loadingSpinner} />
+                          <ThemedText style={styles.googleText}>Signing in...</ThemedText>
+                        </>
+                      ) : (
+                        <>
+                          <Image 
+                            source={require('@/assets/images/Google-icon.png')}
+                            style={styles.googleIcon}
+                          />
+                          <ThemedText style={styles.googleText}>Continue with Google</ThemedText>
+                        </>
+                      )}
                     </LinearGradient>
                   </TouchableOpacity>
                 </View>
@@ -316,5 +384,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     fontFamily: 'Inter_700Bold',
+  },
+  loadingSpinner: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#333',
+    borderTopColor: 'transparent',
+    marginRight: 15,
   },
 });
