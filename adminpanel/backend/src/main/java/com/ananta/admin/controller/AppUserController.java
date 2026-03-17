@@ -3,6 +3,10 @@ package com.ananta.admin.controller;
 import com.ananta.admin.model.KYC;
 import com.ananta.admin.model.User;
 import com.ananta.admin.model.Follow;
+import com.ananta.admin.model.HostLevel;
+import com.ananta.admin.model.ViewerLevel;
+import com.ananta.admin.repository.HostLevelRepository;
+import com.ananta.admin.repository.ViewerLevelRepository;
 import com.ananta.admin.payload.KycStatusResponse;
 import com.ananta.admin.payload.MessageResponse;
 import com.ananta.admin.payload.OtpVerifyRequest;
@@ -64,6 +68,12 @@ public class AppUserController {
     private com.ananta.admin.repository.AppSettingsRepository appSettingsRepository;
 
     @Autowired
+    private HostLevelRepository hostLevelRepository;
+
+    @Autowired
+    private ViewerLevelRepository viewerLevelRepository;
+
+    @Autowired
     private org.springframework.context.ApplicationContext applicationContext;
 
     @PersistenceContext
@@ -75,6 +85,22 @@ public class AppUserController {
             Files.createDirectories(Paths.get(UPLOAD_DIR));
         } catch (IOException e) {
         }
+    }
+
+    @GetMapping("/levels/host")
+    public ResponseEntity<?> getHostLevels() {
+        java.util.List<HostLevel> levels = hostLevelRepository.findAllByOrderByLevelAsc();
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("levels", levels);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/levels/viewer")
+    public ResponseEntity<?> getViewerLevels() {
+        java.util.List<ViewerLevel> levels = viewerLevelRepository.findAllByOrderByLevelAsc();
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("levels", levels);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/health")
