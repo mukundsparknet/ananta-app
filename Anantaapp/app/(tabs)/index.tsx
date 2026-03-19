@@ -45,29 +45,37 @@ export default function HomeScreen() {
   }, []);
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  
+
+  // Load real following list from backend to seed followedKeys
+  const fetchFollowingIds = async (userId: string) => {
+    try {
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/following/${userId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const ids: string[] = Array.isArray(data)
+        ? data.map((f: any) => String(f.userId)).filter(Boolean)
+        : [];
+      setFollowedKeys(ids);
+    } catch {}
+  };
+
   const handleFollow = async (item: any) => {
     const followKey = (item as any).followKey || String(item.id);
     const isFollowing = followedKeys.includes(followKey);
     setFollowedKeys(prev =>
       isFollowing ? prev.filter(key => key !== followKey) : [...prev, followKey]
     );
-    if (!item.hostUserId || !currentUserId) {
-      return;
-    }
+    if (!item.hostUserId || !currentUserId) return;
     try {
       await fetch(`${ENV.API_BASE_URL}/api/app/follow/toggle`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           followerId: currentUserId,
           followeeId: item.hostUserId,
         }),
       });
-    } catch {
-    }
+    } catch {}
   };
   
 
@@ -91,9 +99,14 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      setCurrentUserId(window.localStorage.getItem('userId'));
+      const id = window.localStorage.getItem('userId');
+      setCurrentUserId(id);
+      if (id) fetchFollowingIds(id);
     } else {
-      AsyncStorage.getItem('userId').then(id => setCurrentUserId(id)).catch(() => {});
+      AsyncStorage.getItem('userId').then(id => {
+        setCurrentUserId(id);
+        if (id) fetchFollowingIds(id);
+      }).catch(() => {});
     }
   }, []);
 

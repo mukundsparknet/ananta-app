@@ -19,16 +19,23 @@ export default function SearchScreen() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const queryRef = useRef('');
+
   useEffect(() => {
-    AsyncStorage.getItem('userId').then(id => setCurrentUserId(id)).catch(() => {});
+    AsyncStorage.getItem('userId').then(id => {
+      setCurrentUserId(id);
+      // Re-run search with correct userId if already typed
+      if (id && queryRef.current.trim().length >= 2) search(queryRef.current, id);
+    }).catch(() => {});
   }, []);
 
-  const search = async (q: string) => {
+  const search = async (q: string, uid?: string | null) => {
+    const userId = uid !== undefined ? uid : currentUserId;
     if (q.trim().length < 2) { setResults([]); return; }
     setLoading(true);
     try {
       const params = new URLSearchParams({ q: q.trim() });
-      if (currentUserId) params.append('currentUserId', currentUserId);
+      if (userId) params.append('currentUserId', userId);
       const res = await fetch(`${ENV.API_BASE_URL}/api/app/search/users?${params}`);
       if (res.ok) setResults(await res.json());
     } catch { }
@@ -37,6 +44,7 @@ export default function SearchScreen() {
 
   const onChangeText = (text: string) => {
     setQuery(text);
+    queryRef.current = text;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => search(text), 400);
   };
@@ -128,7 +136,7 @@ export default function SearchScreen() {
             returnKeyType="search"
           />
           {query.length > 0 && (
-            <TouchableOpacity onPress={() => { setQuery(''); setResults([]); }}>
+            <TouchableOpacity onPress={() => { setQuery(''); queryRef.current = ''; setResults([]); }}>
               <Ionicons name="close-circle" size={18} color={isDark ? 'black' : 'white'} />
             </TouchableOpacity>
           )}
