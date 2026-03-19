@@ -67,6 +67,15 @@ public class User {
     @Column(name = "ban_reason")
     private String banReason;
 
+    @Column(name = "invite_code", unique = true)
+    private String inviteCode;
+
+    @Column(name = "referral_count")
+    private Integer referralCount = 0;
+
+    @Column(name = "referred_by")
+    private String referredBy;
+
     @Column(name = "host_level")
     private Integer hostLevel = 0;
 
@@ -84,6 +93,15 @@ public class User {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public String getInviteCode() { return inviteCode; }
+    public void setInviteCode(String inviteCode) { this.inviteCode = inviteCode; }
+
+    public Integer getReferralCount() { return referralCount; }
+    public void setReferralCount(Integer referralCount) { this.referralCount = referralCount; }
+
+    public String getReferredBy() { return referredBy; }
+    public void setReferredBy(String referredBy) { this.referredBy = referredBy; }
 
     @PrePersist
     protected void onCreate() {

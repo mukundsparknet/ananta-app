@@ -17,6 +17,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByPhone(String phone);
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
+    Optional<User> findByInviteCode(String inviteCode);
     @Query(value = "select * from users where lower(username) like lower(concat('%', :q, '%')) or lower(full_name) like lower(concat('%', :q, '%')) or lower(user_id) like lower(concat('%', :q, '%')) limit 20", nativeQuery = true)
     java.util.List<User> searchByQuery(@Param("q") String q);
 }
