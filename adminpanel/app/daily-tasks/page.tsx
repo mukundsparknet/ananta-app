@@ -104,6 +104,18 @@ export default function DailyTasksPage() {
     }
   };
 
+  const handleToggleHostTask = async (taskId: number, current: boolean) => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await axios.patch(`/api/admin/daily-tasks/host/${taskId}/toggle`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setHostTasks(prev => prev.map(t => t.id === taskId ? res.data : t));
+    } catch (e) {
+      alert('Error updating status');
+    }
+  };
+
   const handleDeleteHostTask = async (taskId: number) => {
     const token = localStorage.getItem('token');
     if (!window.confirm('Delete this task?')) return;
@@ -143,6 +155,18 @@ export default function DailyTasksPage() {
       alert('Error saving task');
     } finally {
       setSavingViewerTask(false);
+    }
+  };
+
+  const handleToggleViewerTask = async (taskId: number, current: boolean) => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await axios.patch(`/api/admin/daily-tasks/viewer/${taskId}/toggle`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setViewerTasks(prev => prev.map(t => t.id === taskId ? res.data : t));
+    } catch (e) {
+      alert('Error updating status');
     }
   };
 
@@ -201,8 +225,24 @@ export default function DailyTasksPage() {
                 <td style={{padding:12,fontSize:14,color:'#2d3748',borderBottom:'1px solid #edf2f7'}}>{task.targetValue}</td>
                 <td style={{padding:12,fontSize:14,color:'#2d3748',borderBottom:'1px solid #edf2f7'}}>{task.rewardCoins} coins</td>
                 <td style={{padding:12,fontSize:14,color:'#2d3748',borderBottom:'1px solid #edf2f7'}}>{task.difficulty || 'Easy'}</td>
-                <td style={{padding:12,fontSize:14,color:task.active ? '#38a169' : '#e53e3e',borderBottom:'1px solid #edf2f7'}}>
-                  {task.active ? 'Active' : 'Inactive'}
+                <td style={{padding:12,borderBottom:'1px solid #edf2f7'}}>
+                  <button
+                    onClick={() => handleToggleHostTask(task.id, task.active)}
+                    style={{
+                      position:'relative', display:'inline-flex', alignItems:'center',
+                      width:44, height:24, borderRadius:12, border:'none', cursor:'pointer',
+                      background: task.active ? '#38a169' : '#cbd5e0', transition:'background 0.2s', padding:0,
+                    }}
+                  >
+                    <span style={{
+                      position:'absolute', left: task.active ? 22 : 2,
+                      width:20, height:20, borderRadius:10, background:'white',
+                      transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.3)',
+                    }} />
+                  </button>
+                  <span style={{marginLeft:8,fontSize:12,color: task.active ? '#38a169' : '#e53e3e',fontWeight:600}}>
+                    {task.active ? 'Active' : 'Inactive'}
+                  </span>
                 </td>
                 <td style={{padding:12,textAlign:'right',borderBottom:'1px solid #edf2f7'}}>
                   <button
@@ -271,8 +311,24 @@ export default function DailyTasksPage() {
                 <td style={{padding:12,fontSize:14,color:'#2d3748',borderBottom:'1px solid #edf2f7'}}>{task.targetValue}</td>
                 <td style={{padding:12,fontSize:14,color:'#2d3748',borderBottom:'1px solid #edf2f7'}}>{task.rewardCoins} coins</td>
                 <td style={{padding:12,fontSize:14,color:'#2d3748',borderBottom:'1px solid #edf2f7'}}>{task.difficulty || 'Easy'}</td>
-                <td style={{padding:12,fontSize:14,color:task.active ? '#38a169' : '#e53e3e',borderBottom:'1px solid #edf2f7'}}>
-                  {task.active ? 'Active' : 'Inactive'}
+                <td style={{padding:12,borderBottom:'1px solid #edf2f7'}}>
+                  <button
+                    onClick={() => handleToggleViewerTask(task.id, task.active)}
+                    style={{
+                      position:'relative', display:'inline-flex', alignItems:'center',
+                      width:44, height:24, borderRadius:12, border:'none', cursor:'pointer',
+                      background: task.active ? '#38a169' : '#cbd5e0', transition:'background 0.2s', padding:0,
+                    }}
+                  >
+                    <span style={{
+                      position:'absolute', left: task.active ? 22 : 2,
+                      width:20, height:20, borderRadius:10, background:'white',
+                      transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.3)',
+                    }} />
+                  </button>
+                  <span style={{marginLeft:8,fontSize:12,color: task.active ? '#38a169' : '#e53e3e',fontWeight:600}}>
+                    {task.active ? 'Active' : 'Inactive'}
+                  </span>
                 </td>
                 <td style={{padding:12,textAlign:'right',borderBottom:'1px solid #edf2f7'}}>
                   <button

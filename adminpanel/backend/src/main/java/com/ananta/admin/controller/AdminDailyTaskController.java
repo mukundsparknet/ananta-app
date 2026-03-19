@@ -71,6 +71,15 @@ public class AdminDailyTaskController {
         return ResponseEntity.ok().build();
     }
 
+    @PatchMapping("/host/{id}/toggle")
+    public ResponseEntity<?> toggleHostTask(@PathVariable Long id) {
+        HostTask existing = hostTaskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+        existing.setActive(!Boolean.TRUE.equals(existing.getActive()));
+        HostTask saved = hostTaskRepository.save(existing);
+        return ResponseEntity.ok(saved);
+    }
+
     @GetMapping("/viewer")
     public ResponseEntity<?> getViewerTasks() {
         List<ViewerTask> tasks = viewerTaskRepository.findAllByOrderByIdAsc();
@@ -110,5 +119,14 @@ public class AdminDailyTaskController {
         }
         viewerTaskRepository.deleteById(id);
         return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/viewer/{id}/toggle")
+    public ResponseEntity<?> toggleViewerTask(@PathVariable Long id) {
+        ViewerTask existing = viewerTaskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+        existing.setActive(!Boolean.TRUE.equals(existing.getActive()));
+        ViewerTask saved = viewerTaskRepository.save(existing);
+        return ResponseEntity.ok(saved);
     }
 }
