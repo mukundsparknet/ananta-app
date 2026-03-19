@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getUserId } from '../utils/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -100,7 +100,14 @@ export default function RechargeScreen() {
   const handleCreateRazorpayOrder = async () => {
     if (!selectedPlan) return;
 
-    const userId = await getUserId();
+    let userId: string | null = null;
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      userId = window.localStorage.getItem('userId');
+    } else {
+      try {
+        userId = await AsyncStorage.getItem('userId');
+      } catch { }
+    }
 
     if (!userId) {
       Alert.alert('Error', 'Please login to continue', [
@@ -252,7 +259,14 @@ export default function RechargeScreen() {
   const handleCompletePayment = async () => {
     if (!selectedPlan) return;
 
-    const userId = await getUserId();
+    let userId: string | null = null;
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      userId = window.localStorage.getItem('userId');
+    } else {
+      try {
+        userId = await AsyncStorage.getItem('userId');
+      } catch { }
+    }
 
     if (!userId) {
       Alert.alert('Error', 'User not identified. Please login again.');

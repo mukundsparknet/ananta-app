@@ -1,5 +1,5 @@
 import { Platform, Alert } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { ENV } from '@/config/env';
 
@@ -10,7 +10,11 @@ export const checkAccountStatus = async (): Promise<boolean> => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       userId = window.localStorage.getItem('userId');
     } else {
-      userId = await SecureStore.getItemAsync('userId');
+      try {
+        userId = await AsyncStorage.getItem('userId');
+      } catch {
+        userId = null;
+      }
     }
 
     if (!userId) {
@@ -26,11 +30,12 @@ export const checkAccountStatus = async (): Promise<boolean> => {
     const data = await response.json();
     
     if (data.shouldLogout) {
-      // Clear user session
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         window.localStorage.removeItem('userId');
       } else {
-        await SecureStore.deleteItemAsync('userId');
+        try {
+          await AsyncStorage.removeItem('userId');
+        } catch { }
       }
 
       // Show alert and redirect to login

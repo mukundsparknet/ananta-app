@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { ENV } from '@/config/env';
-import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -23,7 +23,7 @@ export default function LiveScreen() {
       userId = window.localStorage.getItem('userId');
     } else {
       try {
-        userId = await SecureStore.getItemAsync('userId');
+        userId = await AsyncStorage.getItem('userId');
       } catch { }
     }
     if (!userId) {
