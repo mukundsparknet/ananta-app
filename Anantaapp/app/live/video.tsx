@@ -62,6 +62,11 @@ export default function VideoLiveScreen() {
   const [giftList, setGiftList] = useState<any[]>([]);
   const [showGifts, setShowGifts] = useState(false);
   const [loadingGifts, setLoadingGifts] = useState(false);
+  const [giftAnimation, setGiftAnimation] = useState<{ senderName: string; giftImageUrl: string; giftName: string } | null>(null);
+  const giftAnimScale = useRef(new Animated.Value(0)).current;
+  const giftAnimY = useRef(new Animated.Value(0)).current;
+  const giftAnimOpacity = useRef(new Animated.Value(0)).current;
+  const shownGiftIds = useRef<Set<number>>(new Set());
   const resolvedHostProfileImage = resolveProfileImageUrl(hostProfileImage);
 
   const engineRef = useRef<any | null>(null);
@@ -189,6 +194,21 @@ export default function VideoLiveScreen() {
     }
   };
 
+  const triggerGiftAnimation = (senderName: string, giftImageUrl: string, giftName: string) => {
+    giftAnimScale.setValue(0);
+    giftAnimY.setValue(0);
+    giftAnimOpacity.setValue(1);
+    setGiftAnimation({ senderName, giftImageUrl, giftName });
+    Animated.sequence([
+      Animated.spring(giftAnimScale, { toValue: 1, useNativeDriver: true, friction: 5 }),
+      Animated.delay(1800),
+      Animated.parallel([
+        Animated.timing(giftAnimY, { toValue: -80, duration: 600, useNativeDriver: true }),
+        Animated.timing(giftAnimOpacity, { toValue: 0, duration: 600, useNativeDriver: true }),
+      ]),
+    ]).start(() => setGiftAnimation(null));
+  };
+
   const handleSendGift = async (gift: any) => {
     let senderUserId = userId;
     if (!senderUserId) {
@@ -223,6 +243,22 @@ export default function VideoLiveScreen() {
       if (typeof data.fromBalance === 'number') {
         setWalletBalance(data.fromBalance);
       }
+      // Broadcast gift animation to all viewers via message system
+      const senderName = currentUsername !== 'User' ? currentUsername : (senderUserId || 'Someone');
+      const giftMsgId = Date.now();
+      shownGiftIds.current.add(giftMsgId);
+      const giftPayload = JSON.stringify({ __gift: true, giftImageUrl: gift.imageUrl, giftName: gift.name });
+      await fetch(`${ENV.API_BASE_URL}/api/app/live/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          username: senderName,
+          message: giftPayload,
+          avatar: resolveProfileImageUrl(currentUserProfileImage) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50',
+        }),
+      }).catch(() => {});
+      triggerGiftAnimation(senderName, gift.imageUrl, gift.name);
       addFloatingHeart();
       setShowGifts(false);
     } catch {
@@ -499,7 +535,19 @@ export default function VideoLiveScreen() {
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
-          setLiveComments(data.slice(-5));
+          const regularComments: any[] = [];
+          data.forEach((msg: any) => {
+            try {
+              const parsed = JSON.parse(msg.message);
+              if (parsed.__gift && msg.id && !shownGiftIds.current.has(msg.id)) {
+                shownGiftIds.current.add(msg.id);
+                triggerGiftAnimation(msg.user, parsed.giftImageUrl, parsed.giftName);
+              }
+            } catch {
+              regularComments.push(msg);
+            }
+          });
+          setLiveComments(regularComments.slice(-5));
         }
       }
     } catch { }
@@ -730,6 +778,27 @@ export default function VideoLiveScreen() {
             )}
           </View>
         </View>
+
+        {giftAnimation && (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.giftAnimOverlay,
+              {
+                opacity: giftAnimOpacity,
+                transform: [{ scale: giftAnimScale }, { translateY: giftAnimY }],
+              },
+            ]}
+          >
+            {giftAnimation.giftImageUrl ? (
+              <Image source={{ uri: giftAnimation.giftImageUrl }} style={styles.giftAnimImage} />
+            ) : (
+              <Text style={{ fontSize: 80 }}>🎁</Text>
+            )}
+            <Text style={styles.giftAnimName}>{giftAnimation.giftName}</Text>
+            <Text style={styles.giftAnimSender}>from @{giftAnimation.senderName}</Text>
+          </Animated.View>
+        )}
 
         <Modal
           visible={showGifts}
@@ -1079,6 +1148,39 @@ const styles = StyleSheet.create({
   giftCoins: {
     color: '#ffd93d',
     fontSize: 11,
+  },
+  giftAnimOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
+  },
+  giftAnimImage: {
+    width: 160,
+    height: 160,
+    borderRadius: 24,
+    marginBottom: 12,
+  },
+  giftAnimName: {
+    color: '#FFD700',
+    fontSize: 22,
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    marginBottom: 4,
+  },
+  giftAnimSender: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   floatingHeartsContainer: {
     position: 'absolute',
