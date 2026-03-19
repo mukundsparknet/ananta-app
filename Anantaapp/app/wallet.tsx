@@ -34,6 +34,8 @@ export default function WalletScreen() {
   const [monthlyEarned, setMonthlyEarned] = useState(0);
   const [monthlySpent, setMonthlySpent] = useState(0);
   const [monthlyTransactionCount, setMonthlyTransactionCount] = useState(0);
+  const [kycStatus, setKycStatus] = useState<string>('NONE');
+  const [showKycModal, setShowKycModal] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -53,7 +55,15 @@ export default function WalletScreen() {
             return;
           }
           setCurrentUserId(userId);
-          
+
+          try {
+            const kycRes = await fetch(`${ENV.API_BASE_URL}/api/app/profile/${userId}`);
+            if (kycRes.ok) {
+              const kycData = await kycRes.json();
+              setKycStatus(kycData.kyc?.status || 'NONE');
+            }
+          } catch { }
+
           const fetchWallet = async () => {
             try {
               console.log('[Wallet] Fetching profile for userId:', userId);
@@ -146,9 +156,8 @@ export default function WalletScreen() {
   );
 
   const openSendPopup = async () => {
-    if (!currentUserId) {
-      return;
-    }
+    if (!currentUserId) return;
+    if (kycStatus !== 'APPROVED') { setShowKycModal(true); return; }
     try {
       const [followersRes, followingRes] = await Promise.all([
         fetch(`${ENV.API_BASE_URL}/api/app/followers/${currentUserId}`),
@@ -180,9 +189,8 @@ export default function WalletScreen() {
   };
 
   const openWithdrawPopup = () => {
-    if (!currentUserId) {
-      return;
-    }
+    if (!currentUserId) return;
+    if (kycStatus !== 'APPROVED') { setShowKycModal(true); return; }
     setWithdrawAmount('');
     setWithdrawName('');
     setWithdrawBankName('');
@@ -344,6 +352,30 @@ export default function WalletScreen() {
           </TouchableOpacity>
         </View>
       </LinearGradient>
+
+      {/* KYC Modal */}
+      <Modal visible={showKycModal} transparent animationType="fade" onRequestClose={() => setShowKycModal(false)}>
+        <View style={styles.kycModalOverlay}>
+          <View style={[styles.kycModalBox, { backgroundColor: isDark ? '#2a2a2a' : 'white' }]}>
+            <View style={styles.kycModalIcon}>
+              <Ionicons name="shield-outline" size={40} color="#ed8936" />
+            </View>
+            <Text style={[styles.kycModalTitle, { color: isDark ? 'white' : '#1a202c' }]}>KYC Not Approved</Text>
+            <Text style={[styles.kycModalDesc, { color: isDark ? '#aaa' : '#718096' }]}>
+              You need to complete KYC verification to use this feature.
+            </Text>
+            <TouchableOpacity style={styles.kycModalBtn} onPress={() => { setShowKycModal(false); router.push('/verification'); }}>
+              <LinearGradient colors={isDark ? ['#f7c14d', '#ffb300'] : ['#127d96', '#15a3c7']} style={styles.kycModalBtnGradient}>
+                <Ionicons name="shield-checkmark" size={18} color={isDark ? 'black' : 'white'} />
+                <Text style={[styles.kycModalBtnText, { color: isDark ? 'black' : 'white' }]}>Complete KYC</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowKycModal(false)}>
+              <Text style={[styles.kycModalCancel, { color: isDark ? '#888' : '#aaa' }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Balance Card */}
@@ -1000,4 +1032,13 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
   },
+  kycModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
+  kycModalBox: { width: '100%', borderRadius: 24, padding: 32, alignItems: 'center', elevation: 10 },
+  kycModalIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#fef5e7', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  kycModalTitle: { fontSize: 22, fontWeight: '800', marginBottom: 10, textAlign: 'center' },
+  kycModalDesc: { fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 28 },
+  kycModalBtn: { width: '100%', borderRadius: 25, overflow: 'hidden', marginBottom: 14 },
+  kycModalBtnGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, gap: 8 },
+  kycModalBtnText: { fontSize: 16, fontWeight: '700' },
+  kycModalCancel: { fontSize: 14, fontWeight: '500' },
 });
