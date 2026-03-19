@@ -64,18 +64,13 @@ export default function ChatScreen() {
   }, [params.otherUserId, params.otherName]);
 
   const fetchMessages = useCallback(async (thread: string, userId: string) => {
-    if (!thread || !userId) {
-      console.log('[Chat] fetchMessages skipped — thread:', thread, 'userId:', userId);
-      return;
-    }
+    if (!thread || !userId) return;
     try {
-      const url = `${ENV.API_BASE_URL}/api/app/messages/thread/${thread}?userId=${encodeURIComponent(userId)}`;
-      console.log('[Chat] fetchMessages URL:', url);
-      const res = await fetch(url);
-      console.log('[Chat] fetchMessages status:', res.status);
+      const res = await fetch(
+        `${ENV.API_BASE_URL}/api/app/messages/thread/${thread}?userId=${encodeURIComponent(userId)}`
+      );
       if (!res.ok) return;
       const data = await res.json();
-      console.log('[Chat] fetchMessages raw count:', Array.isArray(data) ? data.length : 'not array', data);
       if (!Array.isArray(data)) return;
       const mapped: ChatMessageItem[] = data
         .filter((m: any) => !m.deleted)
@@ -88,14 +83,11 @@ export default function ChatScreen() {
           status: m.status || 'SENT',
           createdAt: m.createdAt || new Date().toISOString(),
         }));
-      console.log('[Chat] fetchMessages mapped count:', mapped.length);
       setMessages(mapped);
       if (mapped.length > 0) {
         setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: false }), 100);
       }
-    } catch (e) {
-      console.log('[Chat] fetchMessages error:', e);
-    }
+    } catch {}
   }, []);
 
   const resolveThread = useCallback(async (uid: string, otherUid: string, tParam: string): Promise<string> => {
@@ -122,7 +114,6 @@ export default function ChatScreen() {
 
       const init = async () => {
         const uid = await AsyncStorage.getItem('userId').catch(() => null);
-        console.log('[Chat] init uid:', uid, 'otherUserId param:', params.otherUserId, 'threadId param:', params.threadId);
         if (!uid || !active) return;
         setCurrentUserId(uid);
         currentUserIdRef.current = uid;
@@ -131,7 +122,6 @@ export default function ChatScreen() {
         const tParam = typeof params.threadId === 'string' ? params.threadId : '';
 
         const resolved = await resolveThread(uid, o, tParam);
-        console.log('[Chat] resolved threadId:', resolved);
         if (!active) return;
 
         if (resolved) {
