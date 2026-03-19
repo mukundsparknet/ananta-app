@@ -84,18 +84,8 @@ export default function OTPScreen() {
         }
       }
 
-      if (kycStatus === 'APPROVED') {
-        router.replace('/(tabs)');
-        return;
-      }
-
-      if (kycStatus === 'REJECTED') {
-        router.replace({ pathname: '/auth/kyc-rejected', params: { userId } });
-        return;
-      }
-
       if (hasProfile) {
-        router.replace({ pathname: '/auth/kyc-review', params: { userId } });
+        router.replace('/(tabs)');
       } else {
         router.replace({ pathname: '/auth/profile', params: { userId } });
       }
