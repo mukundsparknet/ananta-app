@@ -5,8 +5,12 @@ import com.ananta.admin.model.User;
 import com.ananta.admin.model.Follow;
 import com.ananta.admin.model.HostLevel;
 import com.ananta.admin.model.ViewerLevel;
+import com.ananta.admin.model.HostTask;
+import com.ananta.admin.model.ViewerTask;
 import com.ananta.admin.repository.HostLevelRepository;
 import com.ananta.admin.repository.ViewerLevelRepository;
+import com.ananta.admin.repository.HostTaskRepository;
+import com.ananta.admin.repository.ViewerTaskRepository;
 import com.ananta.admin.payload.KycStatusResponse;
 import com.ananta.admin.payload.MessageResponse;
 import com.ananta.admin.payload.OtpVerifyRequest;
@@ -74,6 +78,12 @@ public class AppUserController {
     private ViewerLevelRepository viewerLevelRepository;
 
     @Autowired
+    private HostTaskRepository hostTaskRepository;
+
+    @Autowired
+    private ViewerTaskRepository viewerTaskRepository;
+
+    @Autowired
     private org.springframework.context.ApplicationContext applicationContext;
 
     @PersistenceContext
@@ -85,6 +95,42 @@ public class AppUserController {
             Files.createDirectories(Paths.get(UPLOAD_DIR));
         } catch (IOException e) {
         }
+    }
+
+    @GetMapping("/daily-tasks/{userId}")
+    public ResponseEntity<?> getDailyTasks(@PathVariable String userId) {
+        String normalizedUserId = userId == null ? "" : userId.trim();
+        User user = null;
+        try {
+            user = userRepository.findByUserId(normalizedUserId).orElse(null);
+            if (user == null) user = userRepository.findByUserIdTrimmed(normalizedUserId).orElse(null);
+            if (user == null) {
+                String compact = normalizedUserId.replaceAll("[^A-Za-z0-9]", "");
+                if (!compact.isEmpty()) user = userRepository.findByUserIdNormalized(compact).orElse(null);
+            }
+        } catch (Exception ignored) {}
+
+        int hostLevel = user != null && user.getHostLevel() != null ? user.getHostLevel() : 0;
+        int viewerLevel = user != null && user.getViewerLevel() != null ? user.getViewerLevel() : 0;
+
+        List<HostTask> hostTasks = hostTaskRepository.findAllByOrderByIdAsc().stream()
+                .filter(t -> Boolean.TRUE.equals(t.getActive())
+                        && hostLevel >= t.getMinLevel()
+                        && hostLevel <= t.getMaxLevel())
+                .collect(Collectors.toList());
+
+        List<ViewerTask> viewerTasks = viewerTaskRepository.findAllByOrderByIdAsc().stream()
+                .filter(t -> Boolean.TRUE.equals(t.getActive())
+                        && viewerLevel >= t.getMinLevel()
+                        && viewerLevel <= t.getMaxLevel())
+                .collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("hostTasks", hostTasks);
+        response.put("viewerTasks", viewerTasks);
+        response.put("hostLevel", hostLevel);
+        response.put("viewerLevel", viewerLevel);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/levels/host")
