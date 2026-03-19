@@ -71,12 +71,44 @@ export default function DailyTasksScreen() {
 
   const drainPending = async (userId: string, tasks: Task[]) => {
     const pending: { key: string; match: (e: string) => boolean }[] = [
-      { key: 'pendingWatchMinutes',  match: e => e.includes('WATCH') || e.includes('WATCH_TIME') },
-      { key: 'pendingLiveMinutes',   match: e => e.includes('LIVE') || e.includes('HOST_LIVE') },
-      { key: 'pendingCoinsSpent',    match: e => ['SPEND','GIFT','SEND'].some(k => e.includes(k)) },
-      { key: 'pendingCoinsEarned',   match: e => ['EARN','RECEIVE'].some(k => e.includes(k)) },
-      { key: 'pendingRechargeCoins', match: e => ['RECHARGE','TOPUP','WALLET'].some(k => e.includes(k)) },
+      { key: 'pendingWatchMinutes',      match: e => e === 'WATCH_TIME' },
+      { key: 'pendingLiveMinutes',       match: e => e === 'HOST_LIVE_MINUTES' },
+      { key: 'pendingGiftSentValue',     match: e => e === 'GIFT_SENT_VALUE' },
+      { key: 'pendingRoomJoined',        match: e => e === 'ROOM_JOINED' },
+      { key: 'pendingHostFollowed',      match: e => e === 'HOST_FOLLOWED' },
+      { key: 'pendingMessageSent',       match: e => e === 'MESSAGE_SENT' },
+      { key: 'pendingRechargeCoins',     match: e => e === 'RECHARGE_COINS' },
     ];
+    // GIFT_UNIQUE_HOST needs special handling (count of unique hosts)
+    const uniqueHostsRaw = await AsyncStorage.getItem('pendingGiftUniqueHosts');
+    if (uniqueHostsRaw) {
+      const uniqueHosts: string[] = JSON.parse(uniqueHostsRaw);
+      if (uniqueHosts.length > 0) {
+        await AsyncStorage.removeItem('pendingGiftUniqueHosts');
+        const matched = tasks.filter(t => !t.completed && t.triggerEvent === 'GIFT_UNIQUE_HOST');
+        for (const t of matched) {
+          const result = await postProgress(userId, t.id, t.type, uniqueHosts.length);
+          if (result?.justCompleted) {
+            Alert.alert('🎉 Task Complete!', `"${t.title}" done! +${result.rewardCoins} coins added to wallet.`);
+          }
+        }
+      }
+    }
+    // VIEWER_JOINED needs special handling (count of unique viewer UIDs)
+    const uniqueViewersRaw = await AsyncStorage.getItem('pendingViewerJoinedUids');
+    if (uniqueViewersRaw) {
+      const uniqueViewers: number[] = JSON.parse(uniqueViewersRaw);
+      if (uniqueViewers.length > 0) {
+        await AsyncStorage.removeItem('pendingViewerJoinedUids');
+        const matched = tasks.filter(t => !t.completed && t.triggerEvent === 'VIEWER_JOINED');
+        for (const t of matched) {
+          const result = await postProgress(userId, t.id, t.type, uniqueViewers.length);
+          if (result?.justCompleted) {
+            Alert.alert('🎉 Task Complete!', `"${t.title}" done! +${result.rewardCoins} coins added to wallet.`);
+          }
+        }
+      }
+    }
     let anyPosted = false;
     for (const { key, match } of pending) {
       const raw = await AsyncStorage.getItem(key);

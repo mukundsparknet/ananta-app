@@ -244,9 +244,22 @@ export default function VideoLiveScreen() {
       if (typeof data.fromBalance === 'number') {
         setWalletBalance(data.fromBalance);
       }
-      // Track coins spent for daily task progress
-      const prev = parseFloat(await AsyncStorage.getItem('pendingCoinsSpent') || '0');
-      await AsyncStorage.setItem('pendingCoinsSpent', String(prev + cost));
+      // Track gift sent value (for viewer's own tasks)
+      const prevSpent = parseFloat(await AsyncStorage.getItem('pendingGiftSentValue') || '0');
+      await AsyncStorage.setItem('pendingGiftSentValue', String(prevSpent + cost));
+      // Track unique host gifted (store as JSON array of hostUserIds)
+      const uniqueHostsRaw = await AsyncStorage.getItem('pendingGiftUniqueHosts');
+      const uniqueHosts: string[] = uniqueHostsRaw ? JSON.parse(uniqueHostsRaw) : [];
+      if (hostUserId && !uniqueHosts.includes(hostUserId)) {
+        uniqueHosts.push(hostUserId);
+        await AsyncStorage.setItem('pendingGiftUniqueHosts', JSON.stringify(uniqueHosts));
+      }
+      // Post GIFT_RECEIVED_VALUE directly to host's tasks (host is on a different device)
+      fetch(`${ENV.API_BASE_URL}/api/app/daily-tasks/progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: hostUserId, taskType: 'host', triggerEvent: 'GIFT_RECEIVED_VALUE', addValue: cost }),
+      }).catch(() => {});
       // Broadcast gift animation to all viewers via message system
       const senderName = currentUsername !== 'User' ? currentUsername : (senderUserId || 'Someone');
       const giftMsgId = Date.now();
@@ -282,6 +295,17 @@ export default function VideoLiveScreen() {
       if (response.ok) {
         const data = await response.json();
         setIsFollowing(data.isFollowing);
+        if (data.isFollowing) {
+          // viewer followed host → HOST_FOLLOWED for viewer (drained on daily-tasks screen)
+          const prev = parseFloat(await AsyncStorage.getItem('pendingHostFollowed') || '0');
+          await AsyncStorage.setItem('pendingHostFollowed', String(prev + 1));
+          // host received a follow → post FOLLOW_RECEIVED directly to host's tasks (different device)
+          fetch(`${ENV.API_BASE_URL}/api/app/daily-tasks/progress`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: hostUserId, taskType: 'host', triggerEvent: 'FOLLOW_RECEIVED', addValue: 1 }),
+          }).catch(() => {});
+        }
       }
     } catch (e) {
       console.error('Follow error:', e);
@@ -310,6 +334,9 @@ export default function VideoLiveScreen() {
   const sendMessage = async () => {
     if (!messageText.trim() || !sessionId) return;
     console.log('Sending message with username:', currentUsername, 'avatar:', currentUserProfileImage);
+    // Track message sent
+    const prevMsg = parseFloat(await AsyncStorage.getItem('pendingMessageSent') || '0');
+    await AsyncStorage.setItem('pendingMessageSent', String(prevMsg + 1));
     try {
       await fetch(`${ENV.API_BASE_URL}/api/app/live/message`, {
         method: 'POST',
@@ -408,10 +435,27 @@ export default function VideoLiveScreen() {
         onJoinChannelSuccess: () => {
           console.log('[SUCCESS] Joined channel successfully');
           setJoined(true);
+          // viewer joined a room
+          if (role === 'viewer') {
+            AsyncStorage.getItem('pendingRoomJoined').then(raw => {
+              const prev = parseFloat(raw || '0');
+              AsyncStorage.setItem('pendingRoomJoined', String(prev + 1));
+            });
+          }
         },
         onUserJoined: (_connection: any, uid: number) => {
           console.log('[EVENT] Remote user joined:', uid);
           setRemoteUid(uid);
+          // host tracks unique viewers joined (stored as JSON array of UIDs)
+          if (role === 'host') {
+            AsyncStorage.getItem('pendingViewerJoinedUids').then(raw => {
+              const uids: number[] = raw ? JSON.parse(raw) : [];
+              if (!uids.includes(uid)) {
+                uids.push(uid);
+                AsyncStorage.setItem('pendingViewerJoinedUids', JSON.stringify(uids));
+              }
+            });
+          }
         },
         onUserOffline: (_connection: any, uid: number) => {
           console.log('[EVENT] Remote user offline:', uid);
