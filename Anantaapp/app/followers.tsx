@@ -111,16 +111,18 @@ export default function FollowersScreen() {
 
   const renderFollower = ({ item }) => (
     <View style={[styles.followerItem, { backgroundColor: isDark ? '#333' : 'white' }]}>
-      <Image 
-        source={{ uri: item.avatar }} 
-        style={styles.avatar}
-        defaultSource={require('../assets/images/icon.png')}
-        onError={() => console.log('Avatar failed to load for:', item.name)}
-      />
-      <View style={styles.userInfo}>
-        <Text style={[styles.name, { color: isDark ? 'white' : '#333' }]}>{item.name}</Text>
-        <Text style={[styles.username, { color: isDark ? '#ccc' : '#666' }]}>{item.username}</Text>
-      </View>
+      <TouchableOpacity style={styles.userRow} onPress={() => router.push({ pathname: '/user-profile', params: { userId: item.id } })}>
+        <Image 
+          source={{ uri: item.avatar }} 
+          style={styles.avatar}
+          defaultSource={require('../assets/images/icon.png')}
+          onError={() => console.log('Avatar failed to load for:', item.name)}
+        />
+        <View style={styles.userInfo}>
+          <Text style={[styles.name, { color: isDark ? 'white' : '#333' }]}>{item.name}</Text>
+          <Text style={[styles.username, { color: isDark ? '#ccc' : '#666' }]}>{item.username}</Text>
+        </View>
+      </TouchableOpacity>
       <TouchableOpacity 
         style={[styles.followButton, { 
           backgroundColor: item.isFollowing ? (isDark ? '#f7c14d' : '#127d96') : 'transparent', 
@@ -238,5 +240,10 @@ const styles = StyleSheet.create({
   followText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  userRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

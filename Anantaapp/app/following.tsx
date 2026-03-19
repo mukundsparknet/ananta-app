@@ -103,11 +103,13 @@ export default function FollowingScreen() {
 
   const renderFollowing = ({ item }) => (
     <View style={[styles.followingItem, { backgroundColor: isDark ? '#333' : 'white' }]}>
-      <Image source={{ uri: item.avatar }} style={styles.avatar} />
-      <View style={styles.userInfo}>
-        <Text style={[styles.name, { color: isDark ? 'white' : '#333' }]}>{item.name}</Text>
-        <Text style={[styles.username, { color: isDark ? '#ccc' : '#666' }]}>{item.username}</Text>
-      </View>
+      <TouchableOpacity style={styles.userRow} onPress={() => router.push({ pathname: '/user-profile', params: { userId: item.id } })}>
+        <Image source={{ uri: item.avatar }} style={styles.avatar} />
+        <View style={styles.userInfo}>
+          <Text style={[styles.name, { color: isDark ? 'white' : '#333' }]}>{item.name}</Text>
+          <Text style={[styles.username, { color: isDark ? '#ccc' : '#666' }]}>{item.username}</Text>
+        </View>
+      </TouchableOpacity>
       <TouchableOpacity 
         style={[
           styles.unfollowButton,
@@ -229,5 +231,10 @@ const styles = StyleSheet.create({
   unfollowText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  userRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

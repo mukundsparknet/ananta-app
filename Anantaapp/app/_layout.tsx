@@ -44,6 +44,7 @@ export default function RootLayout() {
             <Stack.Screen name="back-pack" />
             <Stack.Screen name="notification" />
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+            <Stack.Screen name="user-profile" />
           </Stack>
           <StatusBar style="auto" />
         </ThemeProvider>

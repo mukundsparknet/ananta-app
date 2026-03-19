@@ -80,7 +80,7 @@ export default function SearchScreen() {
     return (
       <TouchableOpacity
         style={[styles.row, { backgroundColor: isDark ? '#1a1a1a' : 'white' }]}
-        onPress={() => router.push({ pathname: '/modal', params: { userId: item.userId } })}
+        onPress={() => router.push({ pathname: '/user-profile', params: { userId: item.userId } })}
         activeOpacity={0.7}
       >
         {imgSrc
