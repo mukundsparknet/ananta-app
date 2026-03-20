@@ -32,6 +32,7 @@ export default function ProfileScreen() {
   const [birthDate, setBirthDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
+  const [referralCode, setReferralCode] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
@@ -130,6 +131,16 @@ export default function ProfileScreen() {
         return;
       }
       updateProfile({ name, title: userName, bio, location, email });
+      // Apply referral code if entered
+      if (referralCode.trim()) {
+        try {
+          await fetch(`${ENV.API_BASE_URL}/api/app/referral/apply`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, inviteCode: referralCode.trim().toUpperCase() }),
+          });
+        } catch { /* silent — referral is optional */ }
+      }
       router.replace('/(tabs)');
     } catch { Alert.alert('Error', 'Something went wrong while saving your profile'); }
   };
@@ -281,6 +292,19 @@ export default function ProfileScreen() {
                   placeholderTextColor={isDark ? '#888' : '#666'}
                   value={location}
                   onChangeText={setLocation}
+                />
+              </View>
+
+              <View style={[styles.inputContainer, { backgroundColor: isDark ? '#333' : '#f8f9fa', borderColor: isDark ? '#555' : '#e9ecef' }]}>
+                <Ionicons name="gift-outline" size={20} color={isDark ? '#555' : Colors.light.primary} style={styles.icon} />
+                <TextInput
+                  style={[styles.input, { color: isDark ? 'white' : '#333' }]}
+                  placeholder="Reference Code (Optional)"
+                  placeholderTextColor={isDark ? '#888' : '#666'}
+                  value={referralCode}
+                  onChangeText={(t) => setReferralCode(t.toUpperCase())}
+                  autoCapitalize="characters"
+                  maxLength={12}
                 />
               </View>
             </View>
