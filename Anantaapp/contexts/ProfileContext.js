@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { Platform } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProfileContext = createContext();
 
@@ -38,7 +38,7 @@ export const ProfileProvider = ({ children }) => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       window.localStorage.removeItem('userId');
     } else {
-      SecureStore.deleteItemAsync('userId').catch(() => {});
+      AsyncStorage.removeItem('userId').catch(() => {});
     }
   };
 

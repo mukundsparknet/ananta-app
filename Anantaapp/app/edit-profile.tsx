@@ -38,19 +38,19 @@ const resolveProfileUri = (value: string | null | undefined) => {
 export default function EditProfileScreen() {
   const { profileData, updateProfile } = useProfile();
   const { isDark } = useTheme();
-  const [profileImage, setProfileImage] = useState(profileData.profilePhoto || profileData.profileImage);
-  const [coverImage, setCoverImage] = useState(profileData.headerBackground);
-  const [name, setName] = useState(profileData.name);
-  const [bio, setBio] = useState(profileData.bio);
-  const [location, setLocation] = useState(profileData.location);
-  const [gender, setGender] = useState(profileData.gender);
-  const [birthday, setBirthday] = useState(profileData.birthday);
-  const [addressLine1, setAddressLine1] = useState(profileData.addressLine1);
-  const [city, setCity] = useState(profileData.city);
-  const [state, setState] = useState(profileData.state);
-  const [country, setCountry] = useState(profileData.country);
-  const [pinCode, setPinCode] = useState(profileData.pinCode);
-  const [userName, setUserName] = useState(profileData.UserName);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [name, setName] = useState('');
+  const [bio, setBio] = useState('');
+  const [location, setLocation] = useState('');
+  const [gender, setGender] = useState('');
+  const [birthday, setBirthday] = useState('');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [country, setCountry] = useState('');
+  const [pinCode, setPinCode] = useState('');
+  const [userName, setUserName] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
   const [showImageSheet, setShowImageSheet] = useState(false);
   const [showGenderSheet, setShowGenderSheet] = useState(false);
@@ -107,6 +107,8 @@ export default function EditProfileScreen() {
       setState(user.state || '');
       setCountry(user.country || '');
       setPinCode(user.pinCode || '');
+      setUsernameStatus('available');
+      setUsernameError('');
       updateProfile({
         name: user.fullName || '',
         UserName: user.username || '',
@@ -123,7 +125,8 @@ export default function EditProfileScreen() {
         profilePhoto: profileUri,
         headerBackground: coverUri,
       });
-    } catch {
+    } catch (e) {
+      console.error('loadProfile error:', e);
     }
   };
 

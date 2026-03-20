@@ -20,31 +20,23 @@ export default function LoginScreen() {
     Inter_700Bold,
   });
 
-  // Handle Google OAuth callback on page load
+  // Handle Google OAuth callback on page load (web only)
   useEffect(() => {
+    if (Platform.OS !== 'web') return;
     const handleGoogleCallback = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
-      
       if (code && !isLoading) {
         setIsLoading(true);
         try {
           const googleUser = await GoogleAuthService.signIn();
           const authResult = await GoogleAuthService.authenticateWithBackend(googleUser);
-          
-          await AsyncStorage.setItem('userId', authResult.userId);
-          await AsyncStorage.setItem('userEmail', authResult.email);
-          
+          window.localStorage.setItem('userId', authResult.userId);
+          window.localStorage.setItem('userEmail', authResult.email);
           if (authResult.redirectTo === 'home') {
             router.replace('/(tabs)');
           } else {
-            router.replace({ 
-              pathname: '/auth/profile', 
-              params: { 
-                userId: authResult.userId,
-                email: authResult.email 
-              } 
-            });
+            router.replace({ pathname: '/auth/profile', params: { userId: authResult.userId, email: authResult.email } });
           }
         } catch (error: any) {
           Alert.alert('Google Sign In Failed', error.message || 'Something went wrong');
@@ -53,41 +45,29 @@ export default function LoginScreen() {
         }
       }
     };
-    
-    if (Platform.OS === 'web') {
-      handleGoogleCallback();
-    }
+    handleGoogleCallback();
   }, []);
 
   const handleGoogleSignIn = async () => {
     if (isLoading) return;
-    
     setIsLoading(true);
     try {
-      // Sign in with Google
       const googleUser = await GoogleAuthService.signIn();
-      
-      // Authenticate with backend
       const authResult = await GoogleAuthService.authenticateWithBackend(googleUser);
-      
-      // Store user data
-      await AsyncStorage.setItem('userId', authResult.userId);
-      await AsyncStorage.setItem('userEmail', authResult.email);
-      
-      // Navigate based on backend response
-      if (authResult.redirectTo === 'home') {
-        Alert.alert('Welcome Back!', 'Signed in successfully!', [
-          { text: 'OK', onPress: () => router.replace('/(tabs)') }
-        ]);
+
+      // Save userId using platform-appropriate storage
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.localStorage.setItem('userId', authResult.userId);
+        window.localStorage.setItem('userEmail', authResult.email);
       } else {
-        // New user - redirect to profile setup
-        router.replace({ 
-          pathname: '/auth/profile', 
-          params: { 
-            userId: authResult.userId,
-            email: authResult.email 
-          } 
-        });
+        await AsyncStorage.setItem('userId', authResult.userId);
+        await AsyncStorage.setItem('userEmail', authResult.email);
+      }
+
+      if (authResult.redirectTo === 'home') {
+        router.replace('/(tabs)');
+      } else {
+        router.replace({ pathname: '/auth/profile', params: { userId: authResult.userId, email: authResult.email } });
       }
     } catch (error: any) {
       Alert.alert('Google Sign In Failed', error.message || 'Something went wrong');

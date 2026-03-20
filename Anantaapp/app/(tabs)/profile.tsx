@@ -89,6 +89,7 @@ export default function ProfileScreen() {
       setTotalCoinsSpent(user.totalCoinsSpent || 0);
       updateProfile({
         name: user.username || '',
+        UserName: user.username || '',
         title: user.username || '',
         bio: user.bio || '',
         location: user.location || '',
