@@ -17,7 +17,7 @@ export default function SettingsScreen() {
     { id: 3, title: 'Level', icon: 'bar-chart' },
     { id: 4, title: 'Daily tasks', icon: 'checkmark-circle' },
     { id: 5, title: 'Room admin', icon: 'person' },
-    { id: 6, title: 'Inventory & Back Pack', icon: 'bag' },
+    { id: 6, title: 'Inventory & Back Pack', icon: 'bag', comingSoon: true },
     { id: 7, title: 'Invitation Rewards', icon: 'gift' },
     { id: 8, title: 'Block', icon: 'ban' },
     { id: 9, title: 'Band', icon: 'musical-notes' },
@@ -65,7 +65,7 @@ export default function SettingsScreen() {
                 } else if (item.title === 'Room admin') {
                   router.push('/room-admin');
                 } else if (item.title === 'Inventory & Back Pack') {
-                  router.push('/back-pack');
+                  // coming soon — do nothing
                 } else if (item.title === 'Logout') {
                   router.replace('/auth/login');
                 } else if (item.title === 'Invitation Rewards') {
@@ -92,6 +92,10 @@ export default function SettingsScreen() {
                     trackColor={{ false: '#767577', true: isDark ? '#F7C14D' : '#127d96' }}
                     thumbColor={isDark ? '#f4f3f4' : '#f4f3f4'}
                   />
+                ) : (item as any).comingSoon ? (
+                  <View style={styles.comingSoonBadge}>
+                    <Text style={styles.comingSoonText}>Coming Soon</Text>
+                  </View>
                 ) : (
                   <Ionicons name="chevron-forward" size={20} color={isDark ? '#ccc' : '#666'} />
                 )}
@@ -183,5 +187,16 @@ const styles = StyleSheet.create({
   rightSection: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  comingSoonBadge: {
+    backgroundColor: '#FF9800',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  comingSoonText: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: '700',
   },
 });

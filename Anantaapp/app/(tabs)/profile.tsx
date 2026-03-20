@@ -387,15 +387,8 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
         
-        {/* Fourth row - 2 icons */}
+        {/* Fourth row - 1 icon */}
         <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/back-pack')}>
-            <View style={[styles.actionIcon, { backgroundColor: '#795548' }]}>
-              <Ionicons name="bag" size={24} color="white" />
-            </View>
-            <Text style={[styles.actionText, { color: isDark ? 'white' : '#333' }]}>Inventory</Text>
-          </TouchableOpacity>
-          
           <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/invitation-rewards')}>
             <View style={[styles.actionIcon, { backgroundColor: '#E91E63' }]}>
               <Ionicons name="gift" size={24} color="white" />
@@ -403,6 +396,7 @@ export default function ProfileScreen() {
             <Text style={[styles.actionText, { color: isDark ? 'white' : '#333' }]}>Rewards</Text>
           </TouchableOpacity>
           
+          <View style={styles.actionButton} />
           <View style={styles.actionButton} />
         </View>
       </View>
