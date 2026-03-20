@@ -1,10 +1,8 @@
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/constants/theme';
 import { Inter_400Regular, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Alert, Image, ImageBackground, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, StatusBar, Dimensions } from 'react-native';
+import { Alert, Image, ImageBackground, Platform, StyleSheet, TouchableOpacity, View, StatusBar, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
 import { GoogleAuthService } from '../../services/GoogleAuthService';
@@ -13,7 +11,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
-  const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -76,14 +73,6 @@ export default function LoginScreen() {
     }
   };
 
-  const handleGetOtp = () => {
-    if (!phone.trim()) {
-      Alert.alert('Error', 'Please enter your phone number');
-      return;
-    }
-    router.push({ pathname: '/auth/otp', params: { phone: phone.trim() } });
-  };
-
   if (!fontsLoaded) {
     return null;
   }
@@ -100,15 +89,7 @@ export default function LoginScreen() {
           colors={['rgba(18,125,150,0.8)', 'rgba(10,93,117,0.9)', 'rgba(8,61,79,0.95)']}
           style={styles.overlay}
         >
-          <KeyboardAvoidingView 
-            style={styles.keyboardView}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          >
-            <ScrollView 
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              <View style={styles.content}>
+          <View style={styles.content}>
                 <View style={styles.logoContainer}>
                   <LinearGradient
                     colors={['rgba(255,255,255,0.25)', 'rgba(255,255,255,0.15)']}
@@ -124,44 +105,6 @@ export default function LoginScreen() {
                 </View>
                 
                 <View style={styles.formContainer}>
-                  <View style={styles.inputContainer}>
-                    <LinearGradient
-                      colors={['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.9)']}
-                      style={styles.inputGradient}
-                    >
-                      <Ionicons name="call-outline" size={22} color="#127d96" style={styles.inputIcon} />
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Enter your phone number"
-                        placeholderTextColor="#888"
-                        keyboardType="phone-pad"
-                        value={phone}
-                        onChangeText={setPhone}
-                      />
-                    </LinearGradient>
-                  </View>
-                  
-                  <TouchableOpacity 
-                    style={styles.otpButtonContainer}
-                    onPress={handleGetOtp}
-                  >
-                    <LinearGradient
-                      colors={['#127d96', '#15a3c7', '#1bb5d8']}
-                      style={styles.otpButton}
-                    >
-                      <ThemedText style={styles.buttonText}>Get OTP</ThemedText>
-                      <Ionicons name="arrow-forward" size={20} color="white" style={styles.buttonIcon} />
-                    </LinearGradient>
-                  </TouchableOpacity>
-                  
-                  <View style={styles.dividerContainer}>
-                    <View style={styles.dividerLine} />
-                    <View style={styles.orContainer}>
-                      <ThemedText style={styles.orText}>OR</ThemedText>
-                    </View>
-                    <View style={styles.dividerLine} />
-                  </View>
-                  
                   <TouchableOpacity 
                     style={[styles.googleButton, { opacity: isLoading ? 0.7 : 1 }]}
                     onPress={handleGoogleSignIn}
@@ -188,9 +131,7 @@ export default function LoginScreen() {
                     </LinearGradient>
                   </TouchableOpacity>
                 </View>
-              </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
+          </View>
         </LinearGradient>
       </ImageBackground>
     </View>
@@ -208,14 +149,6 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    minHeight: height,
   },
   content: {
     flex: 1,
@@ -267,77 +200,6 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     width: '100%',
-  },
-  inputContainer: {
-    marginBottom: 25,
-  },
-  inputGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 30,
-    paddingHorizontal: 25,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  inputIcon: {
-    marginRight: 15,
-  },
-  input: {
-    flex: 1,
-    height: height * 0.07,
-    fontSize: 16,
-    fontFamily: 'Inter_400Regular',
-    color: '#333',
-  },
-  otpButtonContainer: {
-    marginBottom: 35,
-  },
-  otpButton: {
-    height: height * 0.07,
-    borderRadius: 30,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#127d96',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '700',
-    fontFamily: 'Inter_700Bold',
-  },
-  buttonIcon: {
-    marginLeft: 10,
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.4)',
-  },
-  orContainer: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginHorizontal: 15,
-  },
-  orText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: 'Inter_700Bold',
   },
   googleButton: {
     width: '100%',

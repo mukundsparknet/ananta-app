@@ -118,14 +118,9 @@ public class AppReferralController {
         if (referrer == null) return ResponseEntity.badRequest().body(Map.of("error", "Invalid invite code"));
         if (referrer.getUserId().equals(newUserId)) return ResponseEntity.badRequest().body(Map.of("error", "Cannot use your own code"));
 
-        // Mark new user as referred
+        // Only save referredBy — count is incremented only when new user's KYC is approved
         newUser.setReferredBy(referrer.getUserId());
         userRepository.save(newUser);
-
-        // Increment referrer's count
-        int count = referrer.getReferralCount() != null ? referrer.getReferralCount() : 0;
-        referrer.setReferralCount(count + 1);
-        userRepository.save(referrer);
 
         return ResponseEntity.ok(Map.of("success", true, "referrerUserId", referrer.getUserId()));
     }

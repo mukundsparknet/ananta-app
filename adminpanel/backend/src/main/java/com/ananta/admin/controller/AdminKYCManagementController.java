@@ -68,6 +68,9 @@ public class AdminKYCManagementController {
                 .orElseThrow(() -> new RuntimeException("KYC not found"));
 
         if ("approve".equalsIgnoreCase(action)) {
+            if (KYC.KYCStatus.APPROVED.equals(kyc.getStatus())) {
+                return ResponseEntity.ok(new MessageResponse("KYC already approved"));
+            }
             kyc.setStatus(KYC.KYCStatus.APPROVED);
             kycRepository.save(kyc);
             giveReferralBonusOnKycApproval(kyc.getUserId());
