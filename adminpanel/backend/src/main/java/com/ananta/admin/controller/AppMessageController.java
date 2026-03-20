@@ -226,6 +226,17 @@ public class AppMessageController {
             return ResponseEntity.badRequest().body(new MessageResponse("User cannot send message to themselves"));
         }
 
+        // Block check — if receiver has blocked sender, deny
+        User receiver = userRepository.findByUserId(receiverId).orElse(null);
+        if (receiver != null && receiver.getBlockedUsers() != null && receiver.getBlockedUsers().contains(senderId)) {
+            return ResponseEntity.status(403).body(new MessageResponse("You cannot send a message to this user"));
+        }
+        // Also check if sender has blocked receiver
+        User sender = userRepository.findByUserId(senderId).orElse(null);
+        if (sender != null && sender.getBlockedUsers() != null && sender.getBlockedUsers().contains(receiverId)) {
+            return ResponseEntity.status(403).body(new MessageResponse("You have blocked this user"));
+        }
+
         ChatThread thread;
         if (StringUtils.hasText(threadId)) {
             thread = chatThreadRepository.findByThreadId(threadId)

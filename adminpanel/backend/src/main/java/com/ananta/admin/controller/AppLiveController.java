@@ -122,6 +122,14 @@ public class AppLiveController {
                 return ResponseEntity.badRequest().body(Collections.singletonMap("message", "Live session is not active"));
             }
 
+            // Block check — if host has blocked this viewer, deny join
+            if (StringUtils.hasText(session.getHostUserId())) {
+                User host = userRepository.findByUserId(session.getHostUserId()).orElse(null);
+                if (host != null && host.getBlockedUsers() != null && host.getBlockedUsers().contains(userId)) {
+                    return ResponseEntity.status(403).body(Collections.singletonMap("message", "You cannot join this live session"));
+                }
+            }
+
             Integer currentCount = session.getViewerCount();
             if (currentCount == null) {
                 currentCount = 0;
@@ -183,7 +191,7 @@ public class AppLiveController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity<?> listLiveSessions() {
+    public ResponseEntity<?> listLiveSessions(@RequestParam(required = false) String userId) {
         List<Map<String, Object>> items = new ArrayList<>();
         try {
             List<LiveSession> lives = liveSessionRepository.findAll();
@@ -194,6 +202,13 @@ public class AppLiveController {
                 // Only show actively LIVE sessions
                 if (!"LIVE".equalsIgnoreCase(session.getStatus())) {
                     continue;
+                }
+                // Hide sessions where host has blocked the viewer
+                if (StringUtils.hasText(userId) && StringUtils.hasText(session.getHostUserId())) {
+                    User host = userRepository.findByUserId(session.getHostUserId()).orElse(null);
+                    if (host != null && host.getBlockedUsers() != null && host.getBlockedUsers().contains(userId)) {
+                        continue;
+                    }
                 }
                 try {
                     Map<String, Object> m = new HashMap<>();

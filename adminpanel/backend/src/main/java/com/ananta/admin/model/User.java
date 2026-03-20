@@ -76,6 +76,11 @@ public class User {
     @Column(name = "referred_by")
     private String referredBy;
 
+    @ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
+    @CollectionTable(name = "user_blocked_list", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "blocked_user_id")
+    private java.util.List<String> blockedUsers = new java.util.ArrayList<>();
+
     @Column(name = "host_level")
     private Integer hostLevel = 0;
 

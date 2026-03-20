@@ -28,6 +28,7 @@ export default function UserProfileScreen() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -55,6 +56,16 @@ export default function UserProfileScreen() {
     } catch {}
   }, [targetUserId]);
 
+  const checkBlocked = useCallback(async (viewerId: string) => {
+    if (!viewerId || !targetUserId) return;
+    try {
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/block/status?blockerId=${viewerId}&targetId=${targetUserId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setIsBlocked(data.blocked);
+    } catch {}
+  }, [targetUserId]);
+
   useFocusEffect(
     useCallback(() => {
       const init = async () => {
@@ -63,16 +74,18 @@ export default function UserProfileScreen() {
         const id = await AsyncStorage.getItem('userId').catch(() => null);
         setCurrentUserId(id);
         if (id) await checkFollowing(id);
+        if (id) await checkBlocked(id);
         setLoading(false);
       };
       init();
-    }, [loadProfile, checkFollowing])
+    }, [loadProfile, checkFollowing, checkBlocked])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
     await loadProfile();
     if (currentUserId) await checkFollowing(currentUserId);
+    if (currentUserId) await checkBlocked(currentUserId);
     setRefreshing(false);
   };
 
@@ -87,6 +100,21 @@ export default function UserProfileScreen() {
       });
     } catch {
       setIsFollowing(prev => !prev); // revert on error
+    }
+  };
+
+  const toggleBlock = async () => {
+    if (!currentUserId || !targetUserId) return;
+    const newBlocked = !isBlocked;
+    setIsBlocked(newBlocked);
+    try {
+      await fetch(`${ENV.API_BASE_URL}/api/app/block/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blockerId: currentUserId, targetId: targetUserId }),
+      });
+    } catch {
+      setIsBlocked(!newBlocked);
     }
   };
 
@@ -215,11 +243,22 @@ export default function UserProfileScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.msgBtn, { borderColor: accent }]}
-                onPress={goToChat}
+                style={[styles.msgBtn, { borderColor: isBlocked ? '#999' : accent }]}
+                onPress={isBlocked ? undefined : goToChat}
+                disabled={isBlocked}
               >
-                <Ionicons name="chatbubble-outline" size={16} color={accent} />
-                <Text style={[styles.msgBtnText, { color: accent }]}>Message</Text>
+                <Ionicons name="chatbubble-outline" size={16} color={isBlocked ? '#999' : accent} />
+                <Text style={[styles.msgBtnText, { color: isBlocked ? '#999' : accent }]}>Message</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.blockBtn, { backgroundColor: isBlocked ? '#e5e7eb' : '#FF4B2B' }]}
+                onPress={toggleBlock}
+              >
+                <Ionicons name={isBlocked ? 'lock-open-outline' : 'ban-outline'} size={16} color={isBlocked ? '#555' : 'white'} />
+                <Text style={[styles.blockBtnText, { color: isBlocked ? '#555' : 'white' }]}>
+                  {isBlocked ? 'Unblock' : 'Block'}
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -330,6 +369,11 @@ const styles = StyleSheet.create({
     gap: 6, paddingVertical: 11, borderRadius: 24, borderWidth: 1.5,
   },
   msgBtnText: { fontSize: 14, fontWeight: '600' },
+  blockBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, paddingVertical: 11, borderRadius: 24,
+  },
+  blockBtnText: { fontSize: 14, fontWeight: '600' },
   statsBar: {
     flexDirection: 'row',
     marginHorizontal: 16,

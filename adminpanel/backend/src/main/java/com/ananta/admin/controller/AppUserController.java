@@ -1268,6 +1268,36 @@ public class AppUserController {
         }
     }
 
+    @PostMapping("/block/toggle")
+    public ResponseEntity<?> toggleBlock(@RequestBody Map<String, String> payload) {
+        String blockerId = payload.get("blockerId");
+        String targetId = payload.get("targetId");
+        if (!StringUtils.hasText(blockerId) || !StringUtils.hasText(targetId) || blockerId.equals(targetId))
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid request"));
+        User blocker = userRepository.findByUserId(blockerId.trim()).orElse(null);
+        if (blocker == null) return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+        if (blocker.getBlockedUsers() == null) blocker.setBlockedUsers(new java.util.ArrayList<>());
+        boolean isBlocked = blocker.getBlockedUsers().contains(targetId.trim());
+        if (isBlocked) blocker.getBlockedUsers().remove(targetId.trim());
+        else blocker.getBlockedUsers().add(targetId.trim());
+        userRepository.save(blocker);
+        return ResponseEntity.ok(Map.of("blocked", !isBlocked));
+    }
+
+    @GetMapping("/block/status")
+    public ResponseEntity<?> blockStatus(@RequestParam String blockerId, @RequestParam String targetId) {
+        User blocker = userRepository.findByUserId(blockerId.trim()).orElse(null);
+        boolean blocked = blocker != null && blocker.getBlockedUsers() != null && blocker.getBlockedUsers().contains(targetId.trim());
+        return ResponseEntity.ok(Map.of("blocked", blocked));
+    }
+
+    @GetMapping("/block/list/{userId}")
+    public ResponseEntity<?> blockList(@PathVariable String userId) {
+        User user = userRepository.findByUserId(userId.trim()).orElse(null);
+        List<String> list = user != null && user.getBlockedUsers() != null ? user.getBlockedUsers() : List.of();
+        return ResponseEntity.ok(Map.of("blockedUsers", list));
+    }
+
     @PostMapping("/follow/toggle")
     public ResponseEntity<?> toggleFollow(@RequestBody Map<String, String> payload) {
         Map<String, Object> response = new HashMap<>();

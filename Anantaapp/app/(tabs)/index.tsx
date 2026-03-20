@@ -144,7 +144,8 @@ export default function HomeScreen() {
 
   const fetchHomeLiveSessions = async () => {
     try {
-      const response = await fetch(`${ENV.API_BASE_URL}/api/app/live/list`);
+      const uid = currentUserId || '';
+      const response = await fetch(`${ENV.API_BASE_URL}/api/app/live/list${uid ? `?userId=${uid}` : ''}`);
       if (!response.ok) {
         return;
       }
@@ -261,7 +262,8 @@ export default function HomeScreen() {
       });
 
       if (!response.ok) {
-        Alert.alert('Error', 'Unable to join live session');
+        const errData = await response.json().catch(() => ({}));
+        Alert.alert('Cannot Join', errData.message || 'Unable to join live session');
         return;
       }
 
