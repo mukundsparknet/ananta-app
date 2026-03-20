@@ -3,29 +3,6 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams, useRouter } from 'next/navigation';
 
-const getImageSrc = (value: string | null | undefined) => {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  
-  // If it's already a full URL or data URI, return it
-  if (trimmed.startsWith('data:') || trimmed.startsWith('http')) return trimmed;
-  
-  // If it's a path starting with /, prepend the current domain (client-side only)
-  if (trimmed.startsWith('/')) {
-    if (typeof window !== 'undefined') {
-      return `${window.location.protocol}//${window.location.host}${trimmed}`;
-    }
-    return trimmed; // Return as-is on server-side
-  }
-  
-  // Try to detect if it's base64 without data URI prefix
-  const compact = trimmed.replace(/\s/g, '');
-  if (compact.length < 50) return null;
-  if (!/^[A-Za-z0-9+/=]+$/.test(compact)) return null;
-  return `data:image/jpeg;base64,${compact}`;
-};
-
 export default function UserDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -33,11 +10,24 @@ export default function UserDetailPage() {
   const [data, setData] = useState<{ user: any; kyc: any } | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const resolveImageSrc = (value: string | null | undefined): string | null => {
+    if (!value) return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('data:')) return trimmed;
+    if (trimmed.startsWith('http')) return trimmed;
+    if (trimmed.startsWith('/uploads/')) return `${window.location.protocol}//${window.location.host}${trimmed}`;
+    const compact = trimmed.replace(/\s/g, '');
+    if (compact.length > 100) return `data:image/jpeg;base64,${compact}`;
+    return null;
+  };
+
   useEffect(() => {
     const fetchDetail = async () => {
       try {
         const response = await axios.get(`/api/app/profile/${userId}`);
         console.log('User profile detail response', response.data);
+        console.log('KYC images:', response.data?.kyc?.documentFrontImage, response.data?.kyc?.documentBackImage);
         setData(response.data);
       } catch (error) {
         console.error('Error fetching user detail', error);
@@ -99,9 +89,9 @@ export default function UserDetailPage() {
         <div style={{background:'white',borderRadius:12,border:'1px solid #e2e8f0',padding:24}}>
           <h3 style={{marginTop:0,marginBottom:16,fontSize:18,color:'#2d3748'}}>Profile Information</h3>
           <div style={{display:'flex',marginBottom:16,alignItems:'center',gap:16}}>
-            {getImageSrc(user.profileImage) ? (
+            {resolveImageSrc(user.profileImage) ? (
               <img
-                src={getImageSrc(user.profileImage) as string}
+                src={resolveImageSrc(user.profileImage) as string}
                 alt="Profile"
                 style={{width:72,height:72,borderRadius:'50%',objectFit:'cover',border:'2px solid #3182ce'}}
               />
@@ -134,35 +124,45 @@ export default function UserDetailPage() {
               <Field label="Status" value={kyc.status} />
               <Field label="Document Type" value={kyc.documentType} />
               <Field label="Document Number" value={kyc.documentNumber} />
-              {(kyc.documentFrontImage || kyc.documentBackImage) && (
-                <div style={{marginTop:12}}>
-                  <div style={{fontSize:12,color:'#a0aec0',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:4}}>
-                    Document Images
-                  </div>
-                  <div style={{display:'flex',gap:12}}>
-                    {getImageSrc(kyc.documentFrontImage) && (
-                      <img
-                        src={getImageSrc(kyc.documentFrontImage) as string}
-                        alt="Document front"
-                        style={{width:140,height:90,objectFit:'cover',borderRadius:8,border:'1px solid #e2e8f0'}}
-                      />
-                    )}
-                    {getImageSrc(kyc.documentBackImage) && (
-                      <img
-                        src={getImageSrc(kyc.documentBackImage) as string}
-                        alt="Document back"
-                        style={{width:140,height:90,objectFit:'cover',borderRadius:8,border:'1px solid #e2e8f0'}}
-                      />
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           ) : (
             <p style={{margin:0,color:'#718096'}}>No KYC record for this user.</p>
           )}
         </div>
       </div>
+
+      {/* KYC Document Images — separate full-width container */}
+      {kyc && (kyc.documentFrontImage || kyc.documentBackImage) && (
+        <div style={{background:'white',borderRadius:12,border:'1px solid #e2e8f0',padding:24,marginTop:24}}>
+          <h3 style={{marginTop:0,marginBottom:20,fontSize:18,color:'#2d3748'}}>Document Images</h3>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))',gap:20}}>
+            {resolveImageSrc(kyc.documentFrontImage) && (
+              <div>
+                <div style={{fontSize:12,color:'#a0aec0',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:8}}>Front Side</div>
+                <a href={resolveImageSrc(kyc.documentFrontImage) as string} target="_blank" rel="noreferrer">
+                  <img
+                    src={resolveImageSrc(kyc.documentFrontImage) as string}
+                    alt="Document front"
+                    style={{width:'100%',height:'auto',maxHeight:300,objectFit:'contain',borderRadius:8,border:'1px solid #e2e8f0',cursor:'pointer',display:'block',background:'#f7fafc'}}
+                  />
+                </a>
+              </div>
+            )}
+            {resolveImageSrc(kyc.documentBackImage) && (
+              <div>
+                <div style={{fontSize:12,color:'#a0aec0',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:8}}>Back Side</div>
+                <a href={resolveImageSrc(kyc.documentBackImage) as string} target="_blank" rel="noreferrer">
+                  <img
+                    src={resolveImageSrc(kyc.documentBackImage) as string}
+                    alt="Document back"
+                    style={{width:'100%',height:'auto',maxHeight:300,objectFit:'contain',borderRadius:8,border:'1px solid #e2e8f0',cursor:'pointer',display:'block',background:'#f7fafc'}}
+                  />
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Address fields removed to match current register/profile form */}
     </div>
