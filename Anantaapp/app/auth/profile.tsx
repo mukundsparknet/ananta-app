@@ -1,4 +1,4 @@
-import { StyleSheet, TextInput, TouchableOpacity, View, Image, ScrollView, KeyboardAvoidingView, Platform, Alert, StatusBar, Modal, FlatList, Text } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View, Image, ScrollView, KeyboardAvoidingView, Platform, Alert, StatusBar, Modal, FlatList, Text, BackHandler } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
@@ -11,6 +11,7 @@ import { Animated } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useProfile } from '../../contexts/ProfileContext';
 import * as FileSystem from 'expo-file-system';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ENV } from '@/config/env';
 
 export default function ProfileScreen() {
@@ -21,7 +22,6 @@ export default function ProfileScreen() {
   const { isDark } = useTheme();
 
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [name, setName] = useState('');
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState(prefilledEmail);
   const [phone, setPhone] = useState('');
@@ -35,6 +35,33 @@ export default function ProfileScreen() {
   const [referralCode, setReferralCode] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+
+  const leaveRegistration = async () => {
+    if (Platform.OS === 'web') {
+      window.localStorage.removeItem('userId');
+      window.localStorage.removeItem('userEmail');
+    } else {
+      await AsyncStorage.removeItem('userId');
+      await AsyncStorage.removeItem('userEmail');
+    }
+    router.replace('/auth/login');
+  };
+
+  useEffect(() => {
+    const onBackPress = () => {
+      Alert.alert(
+        'Cancel Registration?',
+        'Your profile is not complete. You will need to sign in again.',
+        [
+          { text: 'Stay', style: 'cancel' },
+          { text: 'Leave', onPress: leaveRegistration }
+        ]
+      );
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, []);
 
   const genderOptions = ['Male', 'Female', 'Other'];
 
@@ -112,7 +139,7 @@ export default function ProfileScreen() {
         username: userName.trim(),
         email: email.trim(),
         phone: phone.trim(),
-        fullName: name.trim().length > 0 ? name.trim() : userName.trim(),
+        fullName: userName.trim(),
         gender,
         birthday,
         bio,
@@ -130,7 +157,7 @@ export default function ProfileScreen() {
         Alert.alert('Error', err?.message || 'Failed to save profile');
         return;
       }
-      updateProfile({ name, title: userName, bio, location, email });
+      updateProfile({ name: userName, title: userName, bio, location, email });
       // Apply referral code if entered
       if (referralCode.trim()) {
         try {
@@ -151,7 +178,16 @@ export default function ProfileScreen() {
 
       {/* Header */}
       <View style={[styles.header, { backgroundColor: isDark ? '#1a1a1a' : 'white', borderBottomColor: isDark ? '#333' : '#126996' }]}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => {
+          Alert.alert(
+            'Cancel Registration?',
+            'Your profile is not complete. You will need to sign in again.',
+            [
+              { text: 'Stay', style: 'cancel' },
+              { text: 'Leave', onPress: leaveRegistration }
+            ]
+          );
+        }}>
           <Ionicons name="chevron-back" size={24} color={isDark ? 'white' : '#333'} />
         </TouchableOpacity>
         <ThemedText style={[styles.headerTitle, { color: isDark ? 'white' : '#333' }]}>Set Up Profile</ThemedText>
@@ -187,17 +223,6 @@ export default function ProfileScreen() {
                   value={userName}
                   onChangeText={(text) => setUserName(text.replace(/[^a-zA-Z0-9_]/g, ''))}
                   maxLength={20}
-                />
-              </View>
-
-              <View style={[styles.inputContainer, { backgroundColor: isDark ? '#333' : '#f8f9fa', borderColor: isDark ? '#555' : '#e9ecef' }]}>
-                <Ionicons name="person-outline" size={20} color={isDark ? '#555' : Colors.light.primary} style={styles.icon} />
-                <TextInput
-                  style={[styles.input, { color: isDark ? 'white' : '#333' }]}
-                  placeholder="Full Name"
-                  placeholderTextColor={isDark ? '#888' : '#666'}
-                  value={name}
-                  onChangeText={setName}
                 />
               </View>
 
