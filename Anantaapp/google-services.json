@@ -2,12 +2,12 @@
   "project_info": {
     "project_number": "276328703341",
     "project_id": "ananta-489806",
-    "storage_bucket": "ananta-489806.appspot.com"
+    "storage_bucket": "ananta-489806.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:276328703341:android:bddjagcvkurna9s05qppc3bev2sfmop1",
+        "mobilesdk_app_id": "1:276328703341:android:ab4a3bc7438fcd4fc72664",
         "android_client_info": {
           "package_name": "com.techvivek32.Ananta"
         }
@@ -17,17 +17,26 @@
           "client_id": "276328703341-bddjagcvkurna9s05qppc3bev2sfmop1.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.techvivek32.Ananta"
+            "package_name": "com.techvivek32.Ananta",
+            "certificate_hash": "ad67a113338721b59d087cf9213c84b7c458815c"
           }
         },
         {
-          "client_id": "276328703341-6hcs2f5fvt3i5lif4o2i9h4uqio3gakb.apps.googleusercontent.com",
+          "client_id": "276328703341-pjcm9kup9c2f7p852gugov6tn1hp8ck7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.techvivek32.Ananta",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "276328703341-7mckdvu6ess14pkij4nm905qvereeqpf.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDEFAULT_KEY_PLACEHOLDER"
+          "current_key": "AIzaSyCHWu87PBcv-em2Olx8fPrGmbGBtD10FOY"
         }
       ],
       "services": {
