@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, View, Share, Text, Alert, Clipboard } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, View, Share, Text, Alert, Clipboard, Platform } from 'react-native';
 import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
-import { getUserId } from '../utils/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApiUrl } from '../config/env';
 
 type Tier = { shares: number; coins: number; claimed: boolean };
@@ -20,7 +20,7 @@ export default function InvitationRewardsScreen() {
 
   const fetchData = useCallback(async () => {
     try {
-      const userId = await getUserId();
+      const userId = Platform.OS === 'web' ? window.localStorage.getItem('userId') : await AsyncStorage.getItem('userId');
       if (!userId) return;
       const res = await fetch(getApiUrl(`/api/app/referral/info/${userId}`));
       const data = await res.json();
@@ -52,7 +52,7 @@ export default function InvitationRewardsScreen() {
   const handleClaim = async (shares: number) => {
     setClaiming(shares);
     try {
-      const userId = await getUserId();
+      const userId = Platform.OS === 'web' ? window.localStorage.getItem('userId') : await AsyncStorage.getItem('userId');
       const res = await fetch(getApiUrl('/api/app/referral/claim'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
