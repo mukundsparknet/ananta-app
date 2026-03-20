@@ -17,11 +17,9 @@ export default function SettingsScreen() {
     { id: 3, title: 'Level', icon: 'bar-chart' },
     { id: 4, title: 'Daily tasks', icon: 'checkmark-circle' },
     { id: 5, title: 'Room admin', icon: 'person' },
-    { id: 6, title: 'Inventory & Back Pack', icon: 'bag', comingSoon: true },
     { id: 7, title: 'Invitation Rewards', icon: 'gift' },
     { id: 8, title: 'Block', icon: 'ban' },
-    { id: 9, title: 'Band', icon: 'musical-notes' },
-    { id: 10, title: 'Logout', icon: 'log-out' },
+    { id: 9, title: 'Logout', icon: 'log-out' },
   ];
 
   return (
@@ -64,16 +62,12 @@ export default function SettingsScreen() {
                   router.push('/daily-tasks');
                 } else if (item.title === 'Room admin') {
                   router.push('/room-admin');
-                } else if (item.title === 'Inventory & Back Pack') {
-                  // coming soon — do nothing
                 } else if (item.title === 'Logout') {
                   router.replace('/auth/login');
                 } else if (item.title === 'Invitation Rewards') {
                   router.push('/invitation-rewards');
                 } else if (item.title === 'Block') {
                   router.push('/block');
-                } else if (item.title === 'Band') {
-                  router.push('/band');
                 }
               }}
             >
