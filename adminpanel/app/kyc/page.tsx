@@ -13,7 +13,7 @@ export default function KYCPage() {
     if (!url) return '';
     if (url.startsWith('http') || url.startsWith('data:')) return url;
     if (url.startsWith('/uploads/')) {
-      return `${window.location.protocol}//${window.location.host}${url}`;
+      return `https://ecofuelglobal.com${url}`;
     }
     return url;
   };
