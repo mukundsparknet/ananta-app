@@ -2,7 +2,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState, useRef } from 'react';
-import { Image, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, StatusBar, Dimensions, Animated, Alert, PermissionsAndroid } from 'react-native';
+import { Image, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, StatusBar, Dimensions, Animated, Alert, PermissionsAndroid, BackHandler } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -370,6 +370,26 @@ export default function AudioLiveScreen() {
     }
   };
   endLiveRef.current = endLive;
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const onBackPress = () => {
+      if (role === 'host') {
+        Alert.alert('End Live Session', 'Do you want to end this live session?', [
+          { text: 'No', style: 'cancel' },
+          { text: 'Yes', style: 'destructive', onPress: () => endLiveRef.current() },
+        ]);
+      } else {
+        Alert.alert('Leave Live Session', 'Do you want to leave this live session?', [
+          { text: 'No', style: 'cancel' },
+          { text: 'Yes', style: 'destructive', onPress: () => endLiveRef.current() },
+        ]);
+      }
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [role]);
 
   const wave1Scale = waveAnim1.interpolate({
     inputRange: [0, 1],

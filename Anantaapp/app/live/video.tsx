@@ -2,7 +2,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Image, StyleSheet, TextInput, TouchableOpacity, View, Text, KeyboardAvoidingView, Platform, Alert, Modal, FlatList, PermissionsAndroid } from 'react-native';
+import { Animated, Image, StyleSheet, TextInput, TouchableOpacity, View, Text, KeyboardAvoidingView, Platform, Alert, Modal, FlatList, PermissionsAndroid, BackHandler } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { createAgoraEngine, RtcSurfaceView, ChannelProfileType, ClientRoleType } from '@/agoraClient';
 import { ENV } from '@/config/env';
@@ -729,6 +729,26 @@ export default function VideoLiveScreen() {
     }
   };
   endLiveRef.current = endLive;
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const onBackPress = () => {
+      if (role === 'host') {
+        Alert.alert('End Live Session', 'Do you want to end this live session?', [
+          { text: 'No', style: 'cancel' },
+          { text: 'Yes', style: 'destructive', onPress: () => endLiveRef.current() },
+        ]);
+      } else {
+        Alert.alert('Leave Live Session', 'Do you want to leave this live session?', [
+          { text: 'No', style: 'cancel' },
+          { text: 'Yes', style: 'destructive', onPress: () => endLiveRef.current() },
+        ]);
+      }
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [role]);
 
   return (
     <KeyboardAvoidingView
