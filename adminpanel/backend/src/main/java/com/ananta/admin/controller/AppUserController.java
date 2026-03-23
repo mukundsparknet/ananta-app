@@ -767,7 +767,8 @@ public class AppUserController {
             @RequestParam("documentType") String documentType,
             @RequestParam("documentNumber") String documentNumber,
             @RequestPart(value = "documentFrontImage", required = false) org.springframework.web.multipart.MultipartFile frontFile,
-            @RequestPart(value = "documentBackImage", required = false) org.springframework.web.multipart.MultipartFile backFile
+            @RequestPart(value = "documentBackImage", required = false) org.springframework.web.multipart.MultipartFile backFile,
+            @RequestPart(value = "selfieImage", required = false) org.springframework.web.multipart.MultipartFile selfieFile
     ) {
         String normalizedUserId = userId != null ? userId.trim() : "";
         if (!StringUtils.hasText(normalizedUserId) || !StringUtils.hasText(username) || !StringUtils.hasText(email) || !StringUtils.hasText(documentType) || !StringUtils.hasText(documentNumber)) {
@@ -801,6 +802,10 @@ public class AppUserController {
         if (backFile != null && !backFile.isEmpty()) {
             String path = saveUploadedFile(backFile, "doc_back", user.getUserId());
             if (StringUtils.hasText(path)) kyc.setDocumentBackImage(path);
+        }
+        if (selfieFile != null && !selfieFile.isEmpty()) {
+            String path = saveUploadedFile(selfieFile, "selfie", user.getUserId());
+            if (StringUtils.hasText(path)) kyc.setSelfieImage(path);
         }
         kyc.setStatus(KYC.KYCStatus.PENDING);
         kycRepository.save(kyc);

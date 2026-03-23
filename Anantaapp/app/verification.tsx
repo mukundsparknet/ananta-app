@@ -16,6 +16,7 @@ export default function VerificationScreen() {
   const [selectedDocType, setSelectedDocType] = useState('');
   const [frontImage, setFrontImage] = useState<string | null>(null);
   const [backImage, setBackImage] = useState<string | null>(null);
+  const [selfieImage, setSelfieImage] = useState<string | null>(null);
   const [kycStatus, setKycStatus] = useState<'NONE' | 'PENDING' | 'APPROVED'>('NONE');
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', gender: '', birthday: '', bio: '', documentNumber: '', dateOfBirth: '', address: '' });
@@ -77,6 +78,20 @@ export default function VerificationScreen() {
     }
   };
 
+  const takeSelfie = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'Camera permission is needed to take a selfie.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true, aspect: [1, 1], quality: 0.8,
+      cameraType: ImagePicker.CameraType.front,
+    });
+    if (!result.canceled) setSelfieImage(result.assets[0].uri);
+  };
+
   const toBase64 = async (uri: string | null): Promise<string | null> => {
     if (!uri) return null;
     try {
@@ -97,8 +112,8 @@ export default function VerificationScreen() {
   };
 
   const submitVerification = async () => {
-    if (!selectedDocType || !frontImage || !formData.fullName || !formData.email || !formData.documentNumber) {
-      Alert.alert('Error', 'Please fill all required fields and upload at least the front image');
+    if (!selectedDocType || !frontImage || !selfieImage || !formData.fullName || !formData.email || !formData.documentNumber) {
+      Alert.alert('Error', 'Please fill all required fields, upload the front document image, and take a selfie');
       return;
     }
     setSubmitting(true);
@@ -137,6 +152,12 @@ export default function VerificationScreen() {
         const type = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
         form.append('documentBackImage', { uri: backImage, name: filename, type } as any);
       }
+      if (selfieImage) {
+        const filename = selfieImage.split('/').pop() || 'selfie.jpg';
+        const match = /\.([a-zA-Z]+)$/.exec(filename);
+        const type = match ? `image/${match[1].toLowerCase()}` : 'image/jpeg';
+        form.append('selfieImage', { uri: selfieImage, name: filename, type } as any);
+      }
 
       const res = await fetch(`${ENV.API_BASE_URL}/api/app/register-multipart`, {
         method: 'POST',
@@ -144,13 +165,15 @@ export default function VerificationScreen() {
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        Alert.alert('Error', err?.message || 'Submission failed. Try again.');
+        const text = await res.text().catch(() => '');
+        let msg = 'Submission failed. Try again.';
+        try { msg = JSON.parse(text)?.message || text || msg; } catch { msg = text || msg; }
+        Alert.alert('Error', msg);
         return;
       }
       setKycStatus('PENDING');
-    } catch {
-      Alert.alert('Error', 'Network error. Please try again.');
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Network error. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -264,6 +287,34 @@ export default function VerificationScreen() {
                 <UploadBox side="front" image={frontImage} onRemove={() => setFrontImage(null)} />
                 <View style={{ height: 20 }} />
                 <UploadBox side="back" image={backImage} onRemove={() => setBackImage(null)} />
+              </View>
+
+              {/* Selfie */}
+              <View style={[styles.section, { backgroundColor: isDark ? '#2a2a2a' : 'white' }]}>
+                <View style={styles.sectionHeader}>
+                  <Ionicons name="camera" size={20} color={accentColor} />
+                  <Text style={[styles.sectionTitle, { color: isDark ? 'white' : '#333' }]}>Selfie Verification *</Text>
+                </View>
+                <Text style={[{ fontSize: 13, color: isDark ? '#aaa' : '#666', marginBottom: 12 }]}>
+                  Take a selfie using your front camera for identity verification.
+                </Text>
+                {selfieImage ? (
+                  <View style={styles.uploadedContainer}>
+                    <Image source={{ uri: selfieImage }} style={[styles.uploadedImage, { height: 220, borderRadius: 110, width: 220, alignSelf: 'center' }]} />
+                    <TouchableOpacity style={[styles.removeOverlay, { alignSelf: 'center', marginTop: 10, position: 'relative', bottom: 0, right: 0 }]} onPress={() => setSelfieImage(null)}>
+                      <Ionicons name="close" size={16} color="white" />
+                      <Text style={styles.removeText}>Retake</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity onPress={takeSelfie} style={[styles.uploadPlaceholder, { borderColor: isDark ? '#555' : '#dee2e6', backgroundColor: isDark ? '#333' : '#f8f9fa' }]}>
+                    <View style={styles.uploadIconCircle}>
+                      <Ionicons name="camera" size={36} color={accentColor} />
+                    </View>
+                    <Text style={[styles.uploadText, { color: isDark ? '#ccc' : '#666' }]}>Tap to take selfie</Text>
+                    <Text style={[styles.uploadSubtext, { color: isDark ? '#888' : '#999' }]}>Front camera • Required</Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
               {/* Document Details */}

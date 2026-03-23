@@ -270,32 +270,41 @@ export default function KYCPage() {
             </div>
             {/* Images */}
             <div style={{padding:'24px'}}>
-              {(docModal.documentFrontImage || docModal.documentBackImage) ? (
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
-                  {docModal.documentFrontImage && (
-                    <div>
-                      <div style={{fontSize:12,color:'#718096',fontWeight:600,marginBottom:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>Front Side</div>
-                      <a href={resolveImageUrl(docModal.documentFrontImage)} target="_blank" rel="noreferrer">
+              {(docModal.documentFrontImage || docModal.documentBackImage || docModal.selfieImage) ? (
+                <div>
+                  {docModal.selfieImage && (
+                    <div style={{marginBottom:24,textAlign:'center'}}>
+                      <div style={{fontSize:12,color:'#718096',fontWeight:600,marginBottom:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>Selfie</div>
+                      <a href={resolveImageUrl(docModal.selfieImage)} target="_blank" rel="noreferrer">
                         <img
-                          src={resolveImageUrl(docModal.documentFrontImage)}
-                          alt="Front"
-                          style={{width:'100%',height:200,objectFit:'cover',borderRadius:8,border:'1px solid #e2e8f0',cursor:'pointer',display:'block'}}
+                          src={resolveImageUrl(docModal.selfieImage)}
+                          alt="Selfie"
+                          style={{width:160,height:160,objectFit:'cover',borderRadius:'50%',border:'3px solid #6b46c1',cursor:'pointer',display:'inline-block'}}
                         />
                       </a>
-                      <p style={{margin:'8px 0 0',fontSize:12,color:'#a0aec0',textAlign:'center'}}>Click to open full size</p>
+                      <p style={{margin:'8px 0 0',fontSize:12,color:'#a0aec0'}}>Click to open full size</p>
                     </div>
                   )}
-                  {docModal.documentBackImage && (
-                    <div>
-                      <div style={{fontSize:12,color:'#718096',fontWeight:600,marginBottom:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>Back Side</div>
-                      <a href={resolveImageUrl(docModal.documentBackImage)} target="_blank" rel="noreferrer">
-                        <img
-                          src={resolveImageUrl(docModal.documentBackImage)}
-                          alt="Back"
-                          style={{width:'100%',height:200,objectFit:'cover',borderRadius:8,border:'1px solid #e2e8f0',cursor:'pointer',display:'block'}}
-                        />
-                      </a>
-                      <p style={{margin:'8px 0 0',fontSize:12,color:'#a0aec0',textAlign:'center'}}>Click to open full size</p>
+                  {(docModal.documentFrontImage || docModal.documentBackImage) && (
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
+                      {docModal.documentFrontImage && (
+                        <div>
+                          <div style={{fontSize:12,color:'#718096',fontWeight:600,marginBottom:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>Front Side</div>
+                          <a href={resolveImageUrl(docModal.documentFrontImage)} target="_blank" rel="noreferrer">
+                            <img src={resolveImageUrl(docModal.documentFrontImage)} alt="Front" style={{width:'100%',height:200,objectFit:'cover',borderRadius:8,border:'1px solid #e2e8f0',cursor:'pointer',display:'block'}} />
+                          </a>
+                          <p style={{margin:'8px 0 0',fontSize:12,color:'#a0aec0',textAlign:'center'}}>Click to open full size</p>
+                        </div>
+                      )}
+                      {docModal.documentBackImage && (
+                        <div>
+                          <div style={{fontSize:12,color:'#718096',fontWeight:600,marginBottom:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>Back Side</div>
+                          <a href={resolveImageUrl(docModal.documentBackImage)} target="_blank" rel="noreferrer">
+                            <img src={resolveImageUrl(docModal.documentBackImage)} alt="Back" style={{width:'100%',height:200,objectFit:'cover',borderRadius:8,border:'1px solid #e2e8f0',cursor:'pointer',display:'block'}} />
+                          </a>
+                          <p style={{margin:'8px 0 0',fontSize:12,color:'#a0aec0',textAlign:'center'}}>Click to open full size</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
