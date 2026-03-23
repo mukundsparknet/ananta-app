@@ -51,6 +51,7 @@ export default function VideoLiveScreen() {
   const [viewersList, setViewersList] = useState<any[]>([]);
   const [viewerSearch, setViewerSearch] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [isRoomAdmin, setIsRoomAdmin] = useState(false);
 
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', e => setKeyboardHeight(e.endCoordinates.height));
@@ -101,6 +102,19 @@ export default function VideoLiveScreen() {
   console.log('currentUserProfileImage:', currentUserProfileImage);
   console.log('All params:', params);
   console.log('======================');
+
+  // Check if current viewer is a room admin of the host
+  useEffect(() => {
+    if (role !== 'viewer' || !hostUserId || !userId) return;
+    fetch(`${ENV.API_BASE_URL}/api/app/room-admins/${hostUserId}`)
+      .then(res => res.ok ? res.json() : [])
+      .then((admins: any[]) => {
+        if (Array.isArray(admins) && admins.some(a => a.userId === userId)) {
+          setIsRoomAdmin(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Fallback: If username is still 'User', try to fetch profile directly
   useEffect(() => {
@@ -201,7 +215,7 @@ export default function VideoLiveScreen() {
       await fetch(`${ENV.API_BASE_URL}/api/app/live/kick`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, hostUserId: userId, viewerUserId }),
+        body: JSON.stringify({ sessionId, callerUserId: userId, viewerUserId }),
       });
       setViewersList(prev => prev.filter(v => v.userId !== viewerUserId));
     } catch {}
@@ -212,7 +226,7 @@ export default function VideoLiveScreen() {
       await fetch(`${ENV.API_BASE_URL}/api/app/live/ban`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, hostUserId: userId, viewerUserId }),
+        body: JSON.stringify({ sessionId, callerUserId: userId, viewerUserId }),
       });
       setViewersList(prev => prev.filter(v => v.userId !== viewerUserId));
     } catch {}
@@ -969,6 +983,11 @@ export default function VideoLiveScreen() {
                 <TouchableOpacity style={styles.actionButton} onPress={handleGift}>
                   <ThemedText style={[styles.actionIcon, { color: '#ffd93d' }]}>🎁</ThemedText>
                 </TouchableOpacity>
+                {isRoomAdmin && (
+                  <TouchableOpacity style={styles.actionButton} onPress={() => { setViewerSearch(''); loadViewers(); setShowViewers(true); }}>
+                    <ThemedText style={styles.actionIcon}>👥</ThemedText>
+                  </TouchableOpacity>
+                )}
               </>
             )}
           </View>

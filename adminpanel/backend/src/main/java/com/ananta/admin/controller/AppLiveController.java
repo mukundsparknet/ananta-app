@@ -406,13 +406,13 @@ public class AppLiveController {
     @PostMapping("/kick")
     public ResponseEntity<?> kickViewer(@RequestBody Map<String, Object> payload) {
         String sessionId = asString(payload.get("sessionId"));
-        String hostId = asString(payload.get("hostUserId"));
+        String callerId = asString(payload.get("callerUserId"));
         String viewerId = asString(payload.get("viewerUserId"));
         if (!StringUtils.hasText(sessionId) || !StringUtils.hasText(viewerId)) {
             return ResponseEntity.badRequest().body(Collections.singletonMap("message", "sessionId and viewerUserId required"));
         }
         LiveSession session = liveSessionRepository.findBySessionId(sessionId).orElse(null);
-        if (session == null || !session.getHostUserId().equals(hostId)) {
+        if (session == null || !isHostOrRoomAdmin(session, callerId)) {
             return ResponseEntity.status(403).body(Collections.singletonMap("message", "Not authorized"));
         }
         sessionKickedUsers.computeIfAbsent(sessionId, k -> new java.util.concurrent.CopyOnWriteArraySet<>()).add(viewerId);
@@ -424,18 +424,19 @@ public class AppLiveController {
     @Transactional
     public ResponseEntity<?> banViewer(@RequestBody Map<String, Object> payload) {
         String sessionId = asString(payload.get("sessionId"));
-        String hostId = asString(payload.get("hostUserId"));
+        String callerId = asString(payload.get("callerUserId"));
         String viewerId = asString(payload.get("viewerUserId"));
         if (!StringUtils.hasText(sessionId) || !StringUtils.hasText(viewerId)) {
             return ResponseEntity.badRequest().body(Collections.singletonMap("message", "sessionId and viewerUserId required"));
         }
         LiveSession session = liveSessionRepository.findBySessionId(sessionId).orElse(null);
-        if (session == null || !session.getHostUserId().equals(hostId)) {
+        if (session == null || !isHostOrRoomAdmin(session, callerId)) {
             return ResponseEntity.status(403).body(Collections.singletonMap("message", "Not authorized"));
         }
         sessionKickedUsers.computeIfAbsent(sessionId, k -> new java.util.concurrent.CopyOnWriteArraySet<>()).add(viewerId);
         sessionViewers.getOrDefault(sessionId, new HashSet<>()).remove(viewerId);
-        userRepository.findByUserId(hostId).ifPresent(host -> {
+        // Ban is always against the host's blocked list
+        userRepository.findByUserId(session.getHostUserId()).ifPresent(host -> {
             if (host.getBlockedUsers() == null) host.setBlockedUsers(new java.util.ArrayList<>());
             if (!host.getBlockedUsers().contains(viewerId)) {
                 host.getBlockedUsers().add(viewerId);
@@ -443,6 +444,13 @@ public class AppLiveController {
             }
         });
         return ResponseEntity.ok(Collections.singletonMap("message", "banned"));
+    }
+
+    private boolean isHostOrRoomAdmin(LiveSession session, String callerId) {
+        if (!StringUtils.hasText(callerId)) return false;
+        if (callerId.equals(session.getHostUserId())) return true;
+        User host = userRepository.findByUserId(session.getHostUserId()).orElse(null);
+        return host != null && host.getRoomAdmins() != null && host.getRoomAdmins().contains(callerId);
     }
 
     @GetMapping("/check-kicked/{sessionId}/{userId}")
