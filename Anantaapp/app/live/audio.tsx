@@ -2,7 +2,8 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState, useRef } from 'react';
-import { Image, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, StatusBar, Dimensions, Animated, Alert, PermissionsAndroid, BackHandler } from 'react-native';
+import { Image, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView, StatusBar, Dimensions, Animated, Alert, PermissionsAndroid, BackHandler, Modal, FlatList } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { useTheme } from '../../contexts/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,6 +50,11 @@ export default function AudioLiveScreen() {
     return false;
   });
   const [isMuted, setIsMuted] = useState(false);
+  const [isRoomAdmin, setIsRoomAdmin] = useState(false);
+  const [showViewers, setShowViewers] = useState(false);
+  const [viewersList, setViewersList] = useState<any[]>([]);
+  const [viewerSearch, setViewerSearch] = useState('');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [likes, setLikes] = useState(0);
   const [viewerCount, setViewerCount] = useState(0);
   const [liveComments, setLiveComments] = useState<any[]>([]);
@@ -68,6 +74,24 @@ export default function AudioLiveScreen() {
   const waveAnim1 = useRef(new Animated.Value(0)).current;
   const waveAnim2 = useRef(new Animated.Value(0)).current;
   const waveAnim3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', e => setKeyboardHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
+
+  useEffect(() => {
+    if (role !== 'viewer' || !hostUserId || !userId) return;
+    fetch(`${ENV.API_BASE_URL}/api/app/room-admins/${hostUserId}`)
+      .then(res => res.ok ? res.json() : [])
+      .then((admins: any[]) => {
+        if (Array.isArray(admins) && admins.some((a: any) => a.userId === userId)) {
+          setIsRoomAdmin(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     // Pulse animation for profile image
@@ -91,6 +115,59 @@ export default function AudioLiveScreen() {
       Animated.timing(waveAnim3, { toValue: 1, duration: 5000, useNativeDriver: true })
     ).start();
   }, []);
+
+  const filteredViewers = viewerSearch.trim()
+    ? viewersList.filter(v =>
+        (v.username || '').toLowerCase().includes(viewerSearch.toLowerCase()) ||
+        (v.userId || '').toLowerCase().includes(viewerSearch.toLowerCase())
+      )
+    : viewersList;
+
+  const loadViewers = async () => {
+    if (!sessionId) return;
+    try {
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/live/viewers/${sessionId}`);
+      if (res.ok) setViewersList(await res.json());
+    } catch {}
+  };
+
+  const kickViewer = async (viewerUserId: string) => {
+    try {
+      await fetch(`${ENV.API_BASE_URL}/api/app/live/kick`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, callerUserId: userId, viewerUserId }),
+      });
+      setViewersList(prev => prev.filter(v => v.userId !== viewerUserId));
+    } catch {}
+  };
+
+  const banViewer = async (viewerUserId: string) => {
+    try {
+      await fetch(`${ENV.API_BASE_URL}/api/app/live/ban`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, callerUserId: userId, viewerUserId }),
+      });
+      setViewersList(prev => prev.filter(v => v.userId !== viewerUserId));
+    } catch {}
+  };
+
+  const checkIfKicked = async () => {
+    if (role !== 'viewer' || !sessionId || !userId) return;
+    try {
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/live/check-kicked/${sessionId}/${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.kicked) {
+          await cleanupAgora();
+          Alert.alert('Removed', 'You have been removed from this live session.', [
+            { text: 'OK', onPress: () => router.back() }
+          ]);
+        }
+      }
+    } catch {}
+  };
 
   const handleFollow = async () => {
     if (role !== 'viewer') return;
@@ -288,6 +365,7 @@ export default function AudioLiveScreen() {
     checkFollowStatus();
     statsIntervalRef.current = setInterval(loadSessionStats, 5000);
     messagesIntervalRef.current = setInterval(loadMessages, 2000);
+    const kickCheckInterval = role === 'viewer' ? setInterval(checkIfKicked, 3000) : null;
     if (!startedAtRef.current) {
       startedAtRef.current = Date.now();
     }
@@ -302,6 +380,7 @@ export default function AudioLiveScreen() {
       if (statsIntervalRef.current) clearInterval(statsIntervalRef.current);
       if (messagesIntervalRef.current) clearInterval(messagesIntervalRef.current);
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      if (kickCheckInterval) clearInterval(kickCheckInterval);
       cleanupAgora();
     };
   }, [appId, token, channelName]);
@@ -545,6 +624,10 @@ export default function AudioLiveScreen() {
                   color="white" 
                 />
               </TouchableOpacity>
+
+              <TouchableOpacity style={styles.actionButton} onPress={() => { setViewerSearch(''); loadViewers(); setShowViewers(true); }}>
+                <Ionicons name="people" size={20} color="white" />
+              </TouchableOpacity>
               
               <TouchableOpacity style={styles.actionButton} onPress={endLive}>
                 <Ionicons name="stop-circle" size={20} color="#ff4444" />
@@ -553,7 +636,7 @@ export default function AudioLiveScreen() {
           </>
         ) : (
           <View style={styles.viewerBottomRow}>
-            <View style={styles.inputContainer}>
+            <View style={styles.viewerInputContainer}>
               <TextInput
                 style={styles.messageInput}
                 placeholder="Say something..."
@@ -570,9 +653,74 @@ export default function AudioLiveScreen() {
             <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
               <Ionicons name="heart" size={20} color="#ff4444" />
             </TouchableOpacity>
+            {isRoomAdmin && (
+              <TouchableOpacity style={styles.actionButton} onPress={() => { setViewerSearch(''); loadViewers(); setShowViewers(true); }}>
+                <Ionicons name="people" size={20} color="white" />
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </KeyboardAvoidingView>
+
+      <Modal visible={showViewers} transparent animationType="slide" onRequestClose={() => setShowViewers(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { marginBottom: keyboardHeight }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Viewers ({viewersList.length})</Text>
+              <TouchableOpacity onPress={() => setShowViewers(false)}>
+                <Text style={styles.modalClose}>×</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={styles.viewerSearch}
+              placeholder="Search by username or ID..."
+              placeholderTextColor="rgba(255,255,255,0.4)"
+              value={viewerSearch}
+              onChangeText={setViewerSearch}
+              autoCapitalize="none"
+            />
+            {filteredViewers.length === 0 ? (
+              <Text style={styles.emptyText}>{viewerSearch ? 'No viewers found' : 'No viewers yet'}</Text>
+            ) : (
+              <FlatList
+                data={filteredViewers}
+                keyExtractor={item => item.userId}
+                style={{ maxHeight: keyboardHeight > 0 ? 150 : 400 }}
+                renderItem={({ item }) => (
+                  <View style={styles.viewerRow}>
+                    <Image
+                      source={{ uri: resolveProfileImageUrl(item.profileImage) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50' }}
+                      style={styles.viewerAvatar}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.viewerName}>@{item.username || item.userId}</Text>
+                      <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>{item.userId}</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.kickBtn}
+                      onPress={() => Alert.alert('Kick', `Remove ${item.username} from this live?`, [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Kick', style: 'destructive', onPress: () => kickViewer(item.userId) },
+                      ])}
+                    >
+                      <Text style={styles.kickBtnText}>Kick</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.banBtn}
+                      onPress={() => Alert.alert('Ban', `Ban ${item.username} from all your lives?`, [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Ban', style: 'destructive', onPress: () => banViewer(item.userId) },
+                      ])}
+                    >
+                      <Text style={styles.banBtnText}>Ban</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -778,6 +926,14 @@ const styles = StyleSheet.create({
     gap: 10,
     width: '100%',
   },
+  viewerInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 25,
+    paddingHorizontal: 15,
+  },
   messageInput: {
     flex: 1,
     color: 'white',
@@ -810,5 +966,92 @@ const styles = StyleSheet.create({
   mutedButton: {
     backgroundColor: 'rgba(255,68,68,0.2)',
     borderColor: '#ff4444',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: 'rgba(15,15,16,0.98)',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 24,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  modalTitle: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalClose: {
+    color: 'white',
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  viewerSearch: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    color: 'white',
+    fontSize: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  emptyText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 13,
+    paddingVertical: 20,
+    textAlign: 'center',
+  },
+  viewerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  viewerAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 10,
+  },
+  viewerName: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  kickBtn: {
+    backgroundColor: '#e67e22',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  kickBtnText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  banBtn: {
+    backgroundColor: '#e74c3c',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  banBtnText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '700',
   },
 });
