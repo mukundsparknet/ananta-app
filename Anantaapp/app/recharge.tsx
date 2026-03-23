@@ -42,26 +42,6 @@ export default function RechargeScreen() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
   const [rechargePlans, setRechargePlans] = useState<RechargePlan[]>([]);
-  const [kycStatus, setKycStatus] = useState<string>('NONE');
-  const [showKycModal, setShowKycModal] = useState(false);
-
-  useEffect(() => {
-    const checkKyc = async () => {
-      let userId: string | null = null;
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        userId = window.localStorage.getItem('userId');
-      } else {
-        try { userId = await SecureStore.getItemAsync('userId'); } catch { }
-      }
-      if (!userId) return;
-      try {
-        const res = await fetch(`${ENV.API_BASE_URL}/api/app/profile/${userId}`);
-        if (res.ok) { const d = await res.json(); setKycStatus(d.kyc?.status || 'NONE'); }
-      } catch { }
-    };
-    checkKyc();
-  }, []);
-
   useEffect(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const script = document.createElement('script');
@@ -103,7 +83,6 @@ export default function RechargeScreen() {
 
   const handleProceedToPayment = () => {
     if (!selectedPlan) return;
-    if (kycStatus !== 'APPROVED') { setShowKycModal(true); return; }
     handleCreateRazorpayOrder();
   };
 
@@ -205,7 +184,7 @@ export default function RechargeScreen() {
         })
         .catch((error: any) => {
           setLoading(false);
-          Alert.alert('Payment Failed', error.description || 'Payment could not be processed');
+          // User cancelled or dismissed — do nothing
         });
     }
   };
@@ -540,30 +519,6 @@ export default function RechargeScreen() {
     <View style={[styles.container, { backgroundColor: isDark ? '#000' : '#f8f9fa' }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
 
-      {/* KYC Modal */}
-      <Modal visible={showKycModal} transparent animationType="fade" onRequestClose={() => setShowKycModal(false)}>
-        <View style={styles.kycModalOverlay}>
-          <View style={[styles.kycModalBox, { backgroundColor: isDark ? '#2a2a2a' : 'white' }]}>
-            <View style={styles.kycModalIcon}>
-              <Ionicons name="shield-outline" size={40} color="#ed8936" />
-            </View>
-            <Text style={[styles.kycModalTitle, { color: isDark ? 'white' : '#1a202c' }]}>KYC Not Approved</Text>
-            <Text style={[styles.kycModalDesc, { color: isDark ? '#aaa' : '#718096' }]}>
-              You need to complete KYC verification to make a recharge.
-            </Text>
-            <TouchableOpacity style={styles.kycModalBtn} onPress={() => { setShowKycModal(false); router.push('/verification'); }}>
-              <LinearGradient colors={isDark ? ['#f7c14d', '#ffb300'] : ['#127d96', '#15a3c7']} style={styles.kycModalBtnGradient}>
-                <Ionicons name="shield-checkmark" size={18} color={isDark ? 'black' : 'white'} />
-                <Text style={[styles.kycModalBtnText, { color: isDark ? 'black' : 'white' }]}>Complete KYC</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowKycModal(false)}>
-              <Text style={[styles.kycModalCancel, { color: isDark ? '#888' : '#aaa' }]}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-      
       {/* Modern Header */}
       <LinearGradient
         colors={isDark ? ['#f7c14d', '#ffb300'] : ['#127d96', '#15a3c7']}
@@ -803,13 +758,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 30,
   },
-  kycModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  kycModalBox: { width: '100%', borderRadius: 24, padding: 32, alignItems: 'center', elevation: 10 },
-  kycModalIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#fef5e7', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  kycModalTitle: { fontSize: 22, fontWeight: '800', marginBottom: 10, textAlign: 'center' },
-  kycModalDesc: { fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 28 },
-  kycModalBtn: { width: '100%', borderRadius: 25, overflow: 'hidden', marginBottom: 14 },
-  kycModalBtnGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, gap: 8 },
-  kycModalBtnText: { fontSize: 16, fontWeight: '700' },
-  kycModalCancel: { fontSize: 14, fontWeight: '500' },
+
 });
