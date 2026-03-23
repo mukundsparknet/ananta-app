@@ -74,7 +74,7 @@ export default function SearchScreen() {
     const imgSrc = resolveImage(item.profileImage);
     const name = item.fullName || item.username || item.userId;
     const sub = item.username && item.fullName && item.username !== item.fullName
-      ? `@${item.username}` : item.location || '';
+      ? `@${item.username}` : item.userId || '';
 
     return (
       <TouchableOpacity
@@ -160,7 +160,7 @@ export default function SearchScreen() {
       {!loading && query.length < 2 && (
         <View style={styles.empty}>
           <Ionicons name="search-outline" size={48} color={isDark ? '#444' : '#ccc'} />
-          <Text style={[styles.emptyText, { color: isDark ? '#666' : '#aaa' }]}>Search by name or username</Text>
+          <Text style={[styles.emptyText, { color: isDark ? '#666' : '#aaa' }]}>Search by name, username or ID</Text>
         </View>
       )}
 

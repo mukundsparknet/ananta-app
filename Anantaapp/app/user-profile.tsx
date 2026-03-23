@@ -226,6 +226,7 @@ export default function UserProfileScreen() {
                 <Text style={[styles.username, { color: isDark ? '#888' : '#999' }]}>@{username}</Text>
               )}
             </View>
+            <Text style={[styles.userId, { color: isDark ? '#666' : '#aaa' }]}>ID: {targetUserId}</Text>
             {!!bio && <Text style={[styles.bio, { color: isDark ? '#aaa' : '#666' }]}>{bio}</Text>}
             {!!location && (
               <View style={styles.locationRow}>
@@ -463,6 +464,7 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
   displayName: { fontSize: 20, fontWeight: '700' },
   username: { fontSize: 14 },
+  userId: { fontSize: 12, marginBottom: 6 },
   bio: { fontSize: 14, lineHeight: 20, marginBottom: 6 },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   locationText: { fontSize: 13 },
