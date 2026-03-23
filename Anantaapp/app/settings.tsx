@@ -17,6 +17,7 @@ export default function SettingsScreen() {
     { id: 3, title: 'Level', icon: 'bar-chart' },
     { id: 4, title: 'Daily tasks', icon: 'checkmark-circle' },
     { id: 5, title: 'Room admin', icon: 'person' },
+    { id: 6, title: 'Live History', icon: 'videocam' },
     { id: 7, title: 'Invitation Rewards', icon: 'gift' },
     { id: 8, title: 'Block', icon: 'ban' },
     { id: 9, title: 'Logout', icon: 'log-out' },
@@ -64,6 +65,8 @@ export default function SettingsScreen() {
                   router.push('/room-admin');
                 } else if (item.title === 'Logout') {
                   router.replace('/auth/login');
+                } else if (item.title === 'Live History') {
+                  router.push('/live-history');
                 } else if (item.title === 'Invitation Rewards') {
                   router.push('/invitation-rewards');
                 } else if (item.title === 'Block') {

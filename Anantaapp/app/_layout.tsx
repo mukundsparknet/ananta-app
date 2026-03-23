@@ -44,6 +44,7 @@ function AppContent() {
             <Stack.Screen name="notification" />
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
             <Stack.Screen name="user-profile" />
+            <Stack.Screen name="live-history" />
             <Stack.Screen name="live/video" options={{ animation: 'none' }} />
             <Stack.Screen name="live/audio" options={{ animation: 'none' }} />
           </Stack>
