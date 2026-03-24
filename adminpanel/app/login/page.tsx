@@ -69,7 +69,8 @@ export default function LoginPage() {
                   fontSize:16,
                   transition:'all 0.2s',
                   outline:'none',
-                  background:'#f7fafc'
+                  background:'#f7fafc',
+                  boxSizing:'border-box'
                 }}
                 autoComplete="off"
                 onFocus={(e) => {
@@ -96,13 +97,14 @@ export default function LoginPage() {
                   style={{
                     width:'100%',
                     padding:'14px 16px',
-                    paddingRight:44,
+                    paddingRight:60,
                     border:'2px solid #e2e8f0',
                     borderRadius:8,
                     fontSize:16,
                     transition:'all 0.2s',
                     outline:'none',
-                    background:'#f7fafc'
+                    background:'#f7fafc',
+                    boxSizing:'border-box'
                   }}
                   autoComplete="new-password"
                   placeholder="Enter your password"
@@ -124,12 +126,13 @@ export default function LoginPage() {
                     right:12,
                     top:'50%',
                     transform:'translateY(-50%)',
-                    fontSize:12,
-                    color:'#4a5568',
+                    fontSize:13,
+                    color:'#4299e1',
                     background:'transparent',
                     border:'none',
                     cursor:'pointer',
-                    padding:0
+                    padding:'4px 8px',
+                    fontWeight:600
                   }}
                 >
                   {showPassword ? 'Hide' : 'Show'}
@@ -176,7 +179,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div style={{textAlign:'center',marginTop:32}}>
-          <p style={{margin:0,color:'#a0aec0',fontSize:14}}>© 2024 ANANTA. All rights reserved.</p>
+          <p style={{margin:0,color:'#a0aec0',fontSize:14}}>© 2026 ANANTA. All rights reserved.</p>
         </div>
       </div>
     </div>
