@@ -20,20 +20,36 @@ export default function UserLiveHistoryPage() {
     try {
       const token = localStorage.getItem('token');
       
-      // Fetch user details
-      const userRes = await axios.get(`/api/admin/users/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUsername(userRes.data?.username || userId);
+      console.log('Fetching live history for userId:', userId);
+      
+      // Try to fetch user details (optional - don't fail if user not found)
+      try {
+        const userRes = await axios.get(`/api/admin/users/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUsername(userRes.data?.username || userId);
+        console.log('User details:', userRes.data);
+      } catch (userError: any) {
+        console.warn('Could not fetch user details, using userId as username:', userError.response?.status);
+        setUsername(userId); // Fallback to userId if user details not found
+      }
 
-      // Fetch live history
-      const historyRes = await axios.get(`/api/app/live/history/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Fetch live history (no auth needed for this endpoint)
+      const historyRes = await axios.get(`/api/app/live/history/${userId}`);
+      
+      console.log('Live history response:', historyRes.data);
+      console.log('UserId used:', userId);
+      console.log('Response type:', typeof historyRes.data);
+      console.log('Is array:', Array.isArray(historyRes.data));
       
       setSessions(Array.isArray(historyRes.data) ? historyRes.data : []);
     } catch (error: any) {
       console.error('Error fetching live history:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('UserId that failed:', userId);
+      // Set empty array on error so UI shows "no sessions found"
+      setSessions([]);
     } finally {
       setLoading(false);
     }
