@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Image, StyleSheet, Dimensions, Animated } from 'react-native';
+import { View, Text, Image, StyleSheet, Dimensions, Animated, ImageBackground, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import AnantaLogo from './AnantaLogo';
 
 const { width, height } = Dimensions.get('window');
 
@@ -40,87 +41,90 @@ export default function SplashScreen({ onFinish }: SplashScreenProps) {
   }, []);
 
   return (
-    <LinearGradient
-      colors={['#127d96', '#15a3c7']}
-      style={styles.container}
-    >
-      <View style={styles.content}>
-        <Animated.View
-          style={[
-            styles.logoContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }],
-            },
-          ]}
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <ImageBackground
+        source={require('@/assets/images/auth-bg.png')}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      >
+        <LinearGradient
+          colors={['rgba(18,125,150,0.8)', 'rgba(10,93,117,0.9)', 'rgba(8,61,79,0.95)']}
+          style={styles.overlay}
         >
-          <Image
-            source={require('@/assets/images/app-logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </Animated.View>
+          <View style={styles.content}>
+            {/* Logo */}
+            <Animated.View
+              style={[
+                styles.logoContainer,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ scale: scaleAnim }],
+                },
+              ]}
+            >
+              <AnantaLogo size="large" />
+            </Animated.View>
 
-        <Animated.View
-          style={[
-            styles.textContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <Text style={styles.appName}>ANANTA</Text>
-          <Text style={styles.tagline}>Live Streaming Platform</Text>
-        </Animated.View>
+            <Animated.View
+              style={[
+                styles.textContainer,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              
+            </Animated.View>
 
-        <Animated.View
-          style={[
-            styles.poweredByContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <Text style={styles.poweredByText}>Powered by</Text>
-          <View style={styles.sparknetContainer}>
-            <Image
-              source={require('@/assets/images/sparknet logo.png')}
-              style={styles.sparknetLogo}
-              resizeMode="contain"
-            />
-            <Text style={styles.sparknetText}>SparkNet</Text>
+            {/* Powered by section - matching login page style */}
+            <Animated.View
+              style={[
+                styles.poweredByContainer,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              <Text style={styles.poweredByText}>Powered by</Text>
+              <Image 
+                source={require('@/assets/images/sparknet logo.png')}
+                style={styles.sparknetLogo}
+                resizeMode="contain"
+              />
+            </Animated.View>
           </View>
-        </Animated.View>
-      </View>
-    </LinearGradient>
+        </LinearGradient>
+      </ImageBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  content: {
-    alignItems: 'center',
-    justifyContent: 'center',
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  overlay: {
     flex: 1,
   },
-  logoContainer: {
-    marginBottom: 40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: width * 0.08,
+    paddingVertical: height * 0.05,
   },
-  logo: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+    width: '100%',
   },
   textContainer: {
     alignItems: 'center',
@@ -144,34 +148,20 @@ const styles = StyleSheet.create({
   },
   poweredByContainer: {
     position: 'absolute',
-    bottom: 80,
-    alignItems: 'center',
-  },
-  poweredByText: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-    marginBottom: 8,
-    fontWeight: '400',
-  },
-  sparknetContainer: {
+    bottom: height * 0.05,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+  },
+  poweredByText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 22,
+    fontWeight: '700',
+    marginRight: 12,
+    letterSpacing: 0.5,
   },
   sparknetLogo: {
-    width: 24,
-    height: 24,
-    marginRight: 8,
-  },
-  sparknetText: {
-    fontSize: 16,
-    color: 'white',
-    fontWeight: '600',
-    letterSpacing: 0.5,
+    width: 120,
+    height: 40,
   },
 });

@@ -431,7 +431,7 @@ export default function HomeScreen() {
                   ) : null}
                 </TouchableOpacity>
               );
-            })}}
+            })}
           </ScrollView>
           
           {/* Banner Indicators */}
