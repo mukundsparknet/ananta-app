@@ -3,21 +3,24 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 
-interface RechargeRecord {
+interface GiftTransactionRecord {
   id: number;
-  userId: string;
-  username?: string;
-  amount: number;
-  coins: number;
-  planName: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  giftId: number;
+  giftName: string;
+  giftValue: number;
+  fromUserId: string;
+  fromUsername: string;
+  toUserId: string;
+  toUsername: string;
+  sessionId: string | null;
+  sessionType: string | null;
+  status: string;
   createdAt: string;
-  updatedAt: string;
 }
 
-export default function RechargeHistoryPage() {
-  const [recharges, setRecharges] = useState<RechargeRecord[]>([]);
-  const [filteredRecharges, setFilteredRecharges] = useState<RechargeRecord[]>([]);
+export default function GiftHistoryPage() {
+  const [transactions, setTransactions] = useState<GiftTransactionRecord[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<GiftTransactionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -27,61 +30,63 @@ export default function RechargeHistoryPage() {
   const itemsPerPage = 25;
 
   useEffect(() => {
-    fetchRecharges();
+    fetchGiftTransactions();
   }, []);
 
   useEffect(() => {
     applyFilters();
-  }, [recharges, searchTerm, startDate, endDate]);
+  }, [transactions, searchTerm, startDate, endDate]);
 
-  const fetchRecharges = async () => {
+  const fetchGiftTransactions = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/admin/recharges', {
+      const response = await axios.get('/api/admin/gift-history', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      const rechargesData = response.data?.recharges || [];
-      
-      // Backend now includes username, no need to fetch separately
-      setRecharges(rechargesData);
+      const transactionsData = response.data?.transactions || [];
+      setTransactions(transactionsData);
     } catch (error: any) {
-      console.error('Error fetching recharges:', error);
+      console.error('Error fetching gift transactions:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const applyFilters = () => {
-    let filtered = [...recharges];
+    let filtered = [...transactions];
 
-    // Search filter (userId or username)
+    // Search filter (sender, receiver, gift name, session ID)
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(r => 
-        r.userId.toLowerCase().includes(search) ||
-        (r.username && r.username.toLowerCase().includes(search))
+      filtered = filtered.filter(t => 
+        t.fromUserId.toLowerCase().includes(search) ||
+        t.fromUsername.toLowerCase().includes(search) ||
+        t.toUserId.toLowerCase().includes(search) ||
+        t.toUsername.toLowerCase().includes(search) ||
+        t.giftName.toLowerCase().includes(search) ||
+        (t.sessionId && t.sessionId.toLowerCase().includes(search))
       );
     }
 
     // Date range filter
     if (startDate) {
-      filtered = filtered.filter(r => {
-        const rechargeDate = new Date(r.createdAt);
-        return rechargeDate >= new Date(startDate);
+      filtered = filtered.filter(t => {
+        const transactionDate = new Date(t.createdAt);
+        return transactionDate >= new Date(startDate);
       });
     }
 
     if (endDate) {
-      filtered = filtered.filter(r => {
-        const rechargeDate = new Date(r.createdAt);
+      filtered = filtered.filter(t => {
+        const transactionDate = new Date(t.createdAt);
         const endDateTime = new Date(endDate);
         endDateTime.setHours(23, 59, 59, 999);
-        return rechargeDate <= endDateTime;
+        return transactionDate <= endDateTime;
       });
     }
 
-    setFilteredRecharges(filtered);
+    setFilteredTransactions(filtered);
   };
 
   const formatDateTime = (dateString: string) => {
@@ -102,15 +107,18 @@ export default function RechargeHistoryPage() {
     
     try {
       // Prepare data for export
-      const exportData = filteredRecharges.map(r => ({
-        'User ID': r.userId,
-        'Username': r.username || 'Unknown',
-        'Plan Name': r.planName || 'N/A',
-        'Amount (₹)': r.amount,
-        'Coins': r.coins,
-        'Status': r.status,
-        'Recharge Date': formatDateTime(r.createdAt),
-        'Updated Date': formatDateTime(r.updatedAt)
+      const exportData = filteredTransactions.map(t => ({
+        'Gift ID': t.giftId,
+        'Gift Name': t.giftName,
+        'Gift Value (Coins)': t.giftValue,
+        'Sent By User ID': t.fromUserId,
+        'Sent By Username': t.fromUsername,
+        'Sent To User ID': t.toUserId,
+        'Sent To Username': t.toUsername,
+        'Session Type': t.sessionType || 'N/A',
+        'Live Session ID': t.sessionId || 'N/A',
+        'Status': t.status,
+        'Gift Date': formatDateTime(t.createdAt)
       }));
 
       // Create worksheet
@@ -118,22 +126,25 @@ export default function RechargeHistoryPage() {
       
       // Set column widths
       ws['!cols'] = [
-        { wch: 15 }, // User ID
-        { wch: 20 }, // Username
-        { wch: 25 }, // Plan Name
-        { wch: 12 }, // Amount
-        { wch: 10 }, // Coins
+        { wch: 10 }, // Gift ID
+        { wch: 25 }, // Gift Name
+        { wch: 18 }, // Gift Value
+        { wch: 18 }, // Sent By User ID
+        { wch: 20 }, // Sent By Username
+        { wch: 18 }, // Sent To User ID
+        { wch: 20 }, // Sent To Username
+        { wch: 15 }, // Session Type
+        { wch: 25 }, // Live Session ID
         { wch: 12 }, // Status
-        { wch: 30 }, // Recharge Date
-        { wch: 30 }  // Updated Date
+        { wch: 30 }  // Gift Date
       ];
 
       // Create workbook
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Recharge History');
+      XLSX.utils.book_append_sheet(wb, ws, 'Gift History');
 
       // Generate filename with current date
-      const filename = `Recharge_History_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const filename = `Gift_History_${new Date().toISOString().split('T')[0]}.xlsx`;
 
       // Download file
       XLSX.writeFile(wb, filename);
@@ -155,8 +166,8 @@ export default function RechargeHistoryPage() {
   // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredRecharges.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredRecharges.length / itemsPerPage);
+  const currentItems = filteredTransactions.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -165,12 +176,12 @@ export default function RechargeHistoryPage() {
 
   // Calculate statistics
   const stats = {
-    total: filteredRecharges.length,
-    pending: filteredRecharges.filter(r => r.status === 'PENDING').length,
-    approved: filteredRecharges.filter(r => r.status === 'APPROVED').length,
-    rejected: filteredRecharges.filter(r => r.status === 'REJECTED').length,
-    totalAmount: filteredRecharges.reduce((sum, r) => sum + (r.amount || 0), 0),
-    totalCoins: filteredRecharges.reduce((sum, r) => sum + (r.coins || 0), 0)
+    total: filteredTransactions.length,
+    totalValue: filteredTransactions.reduce((sum, t) => sum + (t.giftValue || 0), 0),
+    videoGifts: filteredTransactions.filter(t => t.sessionType === 'VIDEO').length,
+    audioGifts: filteredTransactions.filter(t => t.sessionType === 'AUDIO').length,
+    uniqueSenders: new Set(filteredTransactions.map(t => t.fromUserId)).size,
+    uniqueReceivers: new Set(filteredTransactions.map(t => t.toUserId)).size
   };
 
   if (loading) {
@@ -178,7 +189,7 @@ export default function RechargeHistoryPage() {
       <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:400}}>
         <div style={{textAlign:'center'}}>
           <div style={{width:48,height:48,border:'4px solid #e2e8f0',borderTop:'4px solid #4299e1',borderRadius:'50%',animation:'spin 1s linear infinite',margin:'0 auto 16px'}}></div>
-          <p style={{color:'#718096',fontSize:16}}>Loading recharge history...</p>
+          <p style={{color:'#718096',fontSize:16}}>Loading gift history...</p>
         </div>
       </div>
     );
@@ -189,38 +200,38 @@ export default function RechargeHistoryPage() {
       {/* Page Header */}
       <div style={{marginBottom:32}}>
         <h1 style={{margin:0,fontSize:28,fontWeight:700,color:'#1a202c',marginBottom:8}}>
-          Recharge History
+          Gift History
         </h1>
         <p style={{margin:0,color:'#718096',fontSize:16}}>
-          View and manage all recharge transactions
+          View all gift transactions sent during live sessions
         </p>
       </div>
 
       {/* Statistics Cards */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))',gap:20,marginBottom:24}}>
         <div style={{background:'white',padding:20,borderRadius:12,border:'1px solid #e2e8f0',boxShadow:'0 1px 3px rgba(0,0,0,0.1)'}}>
-          <div style={{fontSize:14,color:'#718096',marginBottom:8}}>Total Recharges</div>
+          <div style={{fontSize:14,color:'#718096',marginBottom:8}}>Total Gifts</div>
           <div style={{fontSize:32,fontWeight:700,color:'#1a202c'}}>{stats.total}</div>
         </div>
         <div style={{background:'white',padding:20,borderRadius:12,border:'1px solid #e2e8f0',boxShadow:'0 1px 3px rgba(0,0,0,0.1)'}}>
-          <div style={{fontSize:14,color:'#718096',marginBottom:8}}>Pending</div>
-          <div style={{fontSize:32,fontWeight:700,color:'#d69e2e'}}>{stats.pending}</div>
+          <div style={{fontSize:14,color:'#718096',marginBottom:8}}>Total Value</div>
+          <div style={{fontSize:32,fontWeight:700,color:'#805ad5'}}>{stats.totalValue.toLocaleString()} 💎</div>
         </div>
         <div style={{background:'white',padding:20,borderRadius:12,border:'1px solid #e2e8f0',boxShadow:'0 1px 3px rgba(0,0,0,0.1)'}}>
-          <div style={{fontSize:14,color:'#718096',marginBottom:8}}>Approved</div>
-          <div style={{fontSize:32,fontWeight:700,color:'#38a169'}}>{stats.approved}</div>
+          <div style={{fontSize:14,color:'#718096',marginBottom:8}}>Video Live Gifts</div>
+          <div style={{fontSize:32,fontWeight:700,color:'#3182ce'}}>{stats.videoGifts}</div>
         </div>
         <div style={{background:'white',padding:20,borderRadius:12,border:'1px solid #e2e8f0',boxShadow:'0 1px 3px rgba(0,0,0,0.1)'}}>
-          <div style={{fontSize:14,color:'#718096',marginBottom:8}}>Rejected</div>
-          <div style={{fontSize:32,fontWeight:700,color:'#e53e3e'}}>{stats.rejected}</div>
+          <div style={{fontSize:14,color:'#718096',marginBottom:8}}>Audio Live Gifts</div>
+          <div style={{fontSize:32,fontWeight:700,color:'#805ad5'}}>{stats.audioGifts}</div>
         </div>
         <div style={{background:'white',padding:20,borderRadius:12,border:'1px solid #e2e8f0',boxShadow:'0 1px 3px rgba(0,0,0,0.1)'}}>
-          <div style={{fontSize:14,color:'#718096',marginBottom:8}}>Total Amount</div>
-          <div style={{fontSize:32,fontWeight:700,color:'#3182ce'}}>₹{stats.totalAmount.toLocaleString()}</div>
+          <div style={{fontSize:14,color:'#718096',marginBottom:8}}>Unique Senders</div>
+          <div style={{fontSize:32,fontWeight:700,color:'#38a169'}}>{stats.uniqueSenders}</div>
         </div>
         <div style={{background:'white',padding:20,borderRadius:12,border:'1px solid #e2e8f0',boxShadow:'0 1px 3px rgba(0,0,0,0.1)'}}>
-          <div style={{fontSize:14,color:'#718096',marginBottom:8}}>Total Coins</div>
-          <div style={{fontSize:32,fontWeight:700,color:'#805ad5'}}>{stats.totalCoins.toLocaleString()}</div>
+          <div style={{fontSize:14,color:'#718096',marginBottom:8}}>Unique Receivers</div>
+          <div style={{fontSize:32,fontWeight:700,color:'#d69e2e'}}>{stats.uniqueReceivers}</div>
         </div>
       </div>
 
@@ -246,17 +257,17 @@ export default function RechargeHistoryPage() {
           </button>
         </div>
 
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))',gap:16}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))',gap:16}}>
           {/* Search */}
           <div>
             <label style={{display:'block',fontSize:14,fontWeight:600,color:'#4a5568',marginBottom:8}}>
-              Search (User ID / Username)
+              Search (User / Gift / Session)
             </label>
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by User ID or Username..."
+              placeholder="Search by username, gift name, or session ID..."
               style={{
                 width:'100%',
                 padding:'10px 14px',
@@ -311,7 +322,7 @@ export default function RechargeHistoryPage() {
         </div>
 
         <div style={{marginTop:16,fontSize:14,color:'#718096'}}>
-          Showing {filteredRecharges.length} of {recharges.length} recharges
+          Showing {filteredTransactions.length} of {transactions.length} gift transactions
         </div>
       </div>
 
@@ -319,15 +330,15 @@ export default function RechargeHistoryPage() {
       <div style={{marginBottom:16,display:'flex',justifyContent:'flex-end'}}>
         <button
           onClick={exportToExcel}
-          disabled={exporting || filteredRecharges.length === 0}
+          disabled={exporting || filteredTransactions.length === 0}
           style={{
             padding:'12px 24px',
             border:'none',
             borderRadius:8,
-            cursor: filteredRecharges.length === 0 ? 'not-allowed' : 'pointer',
+            cursor: filteredTransactions.length === 0 ? 'not-allowed' : 'pointer',
             fontSize:14,
             fontWeight:600,
-            background: filteredRecharges.length === 0 ? '#cbd5e0' : '#38a169',
+            background: filteredTransactions.length === 0 ? '#cbd5e0' : '#38a169',
             color:'white',
             display:'flex',
             alignItems:'center',
@@ -341,48 +352,79 @@ export default function RechargeHistoryPage() {
         </button>
       </div>
 
-      {/* Recharges Table */}
+      {/* Gifts Table */}
       <div style={{background:'white',borderRadius:12,overflow:'hidden',border:'1px solid #e2e8f0',boxShadow:'0 1px 3px rgba(0,0,0,0.1)'}}>
         <div style={{overflowX:'auto'}}>
           <table style={{width:'100%',borderCollapse:'collapse'}}>
             <thead>
               <tr style={{background:'#f7fafc',borderBottom:'2px solid #e2e8f0'}}>
-                <th style={{padding:'16px 20px',textAlign:'left',fontWeight:600,color:'#2d3748',fontSize:14,textTransform:'uppercase',letterSpacing:'0.05em'}}>User ID</th>
-                <th style={{padding:'16px 20px',textAlign:'left',fontWeight:600,color:'#2d3748',fontSize:14,textTransform:'uppercase',letterSpacing:'0.05em'}}>Username</th>
-                <th style={{padding:'16px 20px',textAlign:'left',fontWeight:600,color:'#2d3748',fontSize:14,textTransform:'uppercase',letterSpacing:'0.05em'}}>Plan Name</th>
-                <th style={{padding:'16px 20px',textAlign:'left',fontWeight:600,color:'#2d3748',fontSize:14,textTransform:'uppercase',letterSpacing:'0.05em'}}>Amount</th>
-                <th style={{padding:'16px 20px',textAlign:'left',fontWeight:600,color:'#2d3748',fontSize:14,textTransform:'uppercase',letterSpacing:'0.05em'}}>Coins</th>
+                <th style={{padding:'16px 20px',textAlign:'left',fontWeight:600,color:'#2d3748',fontSize:14,textTransform:'uppercase',letterSpacing:'0.05em'}}>Gift ID</th>
+                <th style={{padding:'16px 20px',textAlign:'left',fontWeight:600,color:'#2d3748',fontSize:14,textTransform:'uppercase',letterSpacing:'0.05em'}}>Gift Name</th>
+                <th style={{padding:'16px 20px',textAlign:'left',fontWeight:600,color:'#2d3748',fontSize:14,textTransform:'uppercase',letterSpacing:'0.05em'}}>Sent By</th>
+                <th style={{padding:'16px 20px',textAlign:'left',fontWeight:600,color:'#2d3748',fontSize:14,textTransform:'uppercase',letterSpacing:'0.05em'}}>Sent To</th>
+                <th style={{padding:'16px 20px',textAlign:'left',fontWeight:600,color:'#2d3748',fontSize:14,textTransform:'uppercase',letterSpacing:'0.05em'}}>Value</th>
+                <th style={{padding:'16px 20px',textAlign:'left',fontWeight:600,color:'#2d3748',fontSize:14,textTransform:'uppercase',letterSpacing:'0.05em'}}>Session Type</th>
+                <th style={{padding:'16px 20px',textAlign:'left',fontWeight:600,color:'#2d3748',fontSize:14,textTransform:'uppercase',letterSpacing:'0.05em'}}>Session ID</th>
                 <th style={{padding:'16px 20px',textAlign:'left',fontWeight:600,color:'#2d3748',fontSize:14,textTransform:'uppercase',letterSpacing:'0.05em'}}>Status</th>
-                <th style={{padding:'16px 20px',textAlign:'left',fontWeight:600,color:'#2d3748',fontSize:14,textTransform:'uppercase',letterSpacing:'0.05em'}}>Recharge Date</th>
+                <th style={{padding:'16px 20px',textAlign:'left',fontWeight:600,color:'#2d3748',fontSize:14,textTransform:'uppercase',letterSpacing:'0.05em'}}>Date</th>
               </tr>
             </thead>
             <tbody>
-              {currentItems.map((recharge, index) => (
-                <tr key={recharge.id} style={{borderBottom:index < currentItems.length - 1 ? '1px solid #e2e8f0' : 'none'}}>
+              {currentItems.map((transaction, index) => (
+                <tr key={transaction.id} style={{borderBottom:index < currentItems.length - 1 ? '1px solid #e2e8f0' : 'none'}}>
                   <td style={{padding:'20px'}}>
-                    <div style={{fontSize:13,color:'#718096',fontFamily:'monospace',background:'#f7fafc',padding:'6px 12px',borderRadius:6,display:'inline-block',fontWeight:600}}>
-                      {recharge.userId}
+                    <div style={{fontSize:14,color:'#4a5568',fontWeight:600}}>
+                      #{transaction.giftId}
                     </div>
                   </td>
                   <td style={{padding:'20px'}}>
                     <div style={{fontWeight:600,color:'#1a202c',fontSize:15}}>
-                      {recharge.username || 'Unknown'}
+                      {transaction.giftName}
                     </div>
                   </td>
                   <td style={{padding:'20px'}}>
                     <div style={{fontSize:14,color:'#4a5568'}}>
-                      {recharge.planName || 'N/A'}
+                      <div style={{fontWeight:600,color:'#1a202c'}}>{transaction.fromUsername}</div>
+                      <div style={{fontSize:12,color:'#718096',fontFamily:'monospace'}}>{transaction.fromUserId}</div>
                     </div>
                   </td>
                   <td style={{padding:'20px'}}>
-                    <div style={{fontSize:16,fontWeight:700,color:'#3182ce'}}>
-                      ₹{(recharge.amount || 0).toLocaleString()}
+                    <div style={{fontSize:14,color:'#4a5568'}}>
+                      <div style={{fontWeight:600,color:'#1a202c'}}>{transaction.toUsername}</div>
+                      <div style={{fontSize:12,color:'#718096',fontFamily:'monospace'}}>{transaction.toUserId}</div>
                     </div>
                   </td>
                   <td style={{padding:'20px'}}>
                     <div style={{fontSize:16,fontWeight:700,color:'#805ad5'}}>
-                      {(recharge.coins || 0).toLocaleString()}
+                      {transaction.giftValue} 💎
                     </div>
+                  </td>
+                  <td style={{padding:'20px'}}>
+                    {transaction.sessionType ? (
+                      <span style={{
+                        padding:'6px 12px',
+                        borderRadius:16,
+                        fontSize:12,
+                        fontWeight:600,
+                        textTransform:'uppercase',
+                        background: transaction.sessionType === 'VIDEO' ? '#ebf8ff' : '#f3e8ff',
+                        color: transaction.sessionType === 'VIDEO' ? '#3182ce' : '#805ad5',
+                        border: `1px solid ${transaction.sessionType === 'VIDEO' ? '#bee3f8' : '#d6bcfa'}`
+                      }}>
+                        {transaction.sessionType}
+                      </span>
+                    ) : (
+                      <span style={{color:'#a0aec0',fontSize:14}}>-</span>
+                    )}
+                  </td>
+                  <td style={{padding:'20px'}}>
+                    {transaction.sessionId ? (
+                      <div style={{fontSize:12,color:'#718096',fontFamily:'monospace',background:'#f7fafc',padding:'6px 10px',borderRadius:6,display:'inline-block',maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                        {transaction.sessionId}
+                      </div>
+                    ) : (
+                      <span style={{color:'#a0aec0',fontSize:14}}>-</span>
+                    )}
                   </td>
                   <td style={{padding:'20px'}}>
                     <span style={{
@@ -391,29 +433,29 @@ export default function RechargeHistoryPage() {
                       fontSize:12,
                       fontWeight:600,
                       textTransform:'uppercase',
-                      background: recharge.status === 'APPROVED' ? '#f0fff4' : recharge.status === 'REJECTED' ? '#fed7d7' : '#fef5e7',
-                      color: recharge.status === 'APPROVED' ? '#38a169' : recharge.status === 'REJECTED' ? '#c53030' : '#d69e2e',
-                      border: `1px solid ${recharge.status === 'APPROVED' ? '#9ae6b4' : recharge.status === 'REJECTED' ? '#feb2b2' : '#fbd38d'}`
+                      background: '#f0fff4',
+                      color: '#38a169',
+                      border: '1px solid #9ae6b4'
                     }}>
-                      {recharge.status}
+                      {transaction.status}
                     </span>
                   </td>
                   <td style={{padding:'20px'}}>
                     <div style={{fontSize:14,color:'#4a5568'}}>
-                      {formatDateTime(recharge.createdAt)}
+                      {formatDateTime(transaction.createdAt)}
                     </div>
                   </td>
                 </tr>
               ))}
-              {filteredRecharges.length === 0 && (
+              {filteredTransactions.length === 0 && (
                 <tr>
-                  <td colSpan={7} style={{padding:64,textAlign:'center'}}>
-                    <div style={{fontSize:48,marginBottom:16,opacity:0.5}}>💳</div>
-                    <h3 style={{margin:0,color:'#4a5568',fontSize:18,marginBottom:8}}>No recharges found</h3>
+                  <td colSpan={9} style={{padding:64,textAlign:'center'}}>
+                    <div style={{fontSize:48,marginBottom:16,opacity:0.5}}>🎁</div>
+                    <h3 style={{margin:0,color:'#4a5568',fontSize:18,marginBottom:8}}>No gift transactions found</h3>
                     <p style={{margin:0,color:'#718096'}}>
                       {searchTerm || startDate || endDate
                         ? 'Try adjusting your filters'
-                        : 'No recharge transactions yet'}
+                        : 'No gifts have been sent yet'}
                     </p>
                   </td>
                 </tr>
@@ -423,10 +465,10 @@ export default function RechargeHistoryPage() {
         </div>
 
         {/* Pagination */}
-        {filteredRecharges.length > 0 && (
+        {filteredTransactions.length > 0 && (
           <div style={{background:'#f7fafc',padding:'16px 24px',borderTop:'1px solid #e2e8f0',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
             <div style={{fontSize:14,color:'#4a5568'}}>
-              Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredRecharges.length)} of {filteredRecharges.length} recharges
+              Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredTransactions.length)} of {filteredTransactions.length} gifts
             </div>
             <div style={{display:'flex',gap:8}}>
               <button

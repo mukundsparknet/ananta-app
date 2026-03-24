@@ -1,6 +1,7 @@
 package com.ananta.admin.controller;
 
 import com.ananta.admin.model.Gift;
+import com.ananta.admin.model.GiftTransaction;
 import com.ananta.admin.model.HostLevel;
 import com.ananta.admin.model.User;
 import com.ananta.admin.model.ViewerLevel;
@@ -8,6 +9,7 @@ import com.ananta.admin.model.Wallet;
 import com.ananta.admin.model.WalletTransaction;
 import com.ananta.admin.payload.MessageResponse;
 import com.ananta.admin.repository.GiftRepository;
+import com.ananta.admin.repository.GiftTransactionRepository;
 import com.ananta.admin.repository.HostLevelRepository;
 import com.ananta.admin.repository.UserRepository;
 import com.ananta.admin.repository.ViewerLevelRepository;
@@ -51,6 +53,9 @@ public class AppGiftController {
     @Autowired
     private ViewerLevelRepository viewerLevelRepository;
 
+    @Autowired
+    private GiftTransactionRepository giftTransactionRepository;
+
     @GetMapping
     public ResponseEntity<?> listActiveGifts() {
         List<Gift> gifts = giftRepository.findByActiveTrueOrderByCoinValueAsc();
@@ -62,6 +67,8 @@ public class AppGiftController {
         Object fromIdObj = payload.get("fromUserId");
         Object toIdObj = payload.get("toUserId");
         Object giftIdObj = payload.get("giftId");
+        Object sessionIdObj = payload.get("sessionId");
+        Object sessionTypeObj = payload.get("sessionType");
 
         if (fromIdObj == null || toIdObj == null || giftIdObj == null) {
             return ResponseEntity.badRequest().body(new MessageResponse("fromUserId, toUserId and giftId are required"));
@@ -69,6 +76,9 @@ public class AppGiftController {
 
         String fromUserId = fromIdObj.toString();
         String toUserId = toIdObj.toString();
+        String sessionId = sessionIdObj != null ? sessionIdObj.toString() : null;
+        String sessionType = sessionTypeObj != null ? sessionTypeObj.toString() : null;
+        
         if (fromUserId.equals(toUserId)) {
             return ResponseEntity.badRequest().body(new MessageResponse("Cannot send gift to same user"));
         }
@@ -115,6 +125,28 @@ public class AppGiftController {
 
         recordTransaction(fromUserId, coinValue, false, "GIFT_SENT", "Gift sent: " + gift.getName());
         recordTransaction(toUserId, coinValue, true, "GIFT_RECEIVED", "Gift received: " + gift.getName());
+
+        // Get usernames
+        String fromUsername = userRepository.findByUserId(fromUserId)
+                .map(User::getUsername)
+                .orElse("Unknown");
+        String toUsername = userRepository.findByUserId(toUserId)
+                .map(User::getUsername)
+                .orElse("Unknown");
+
+        // Save gift transaction for history
+        GiftTransaction giftTransaction = new GiftTransaction();
+        giftTransaction.setGiftId(giftId);
+        giftTransaction.setGiftName(gift.getName());
+        giftTransaction.setGiftValue(coinValue);
+        giftTransaction.setFromUserId(fromUserId);
+        giftTransaction.setFromUsername(fromUsername);
+        giftTransaction.setToUserId(toUserId);
+        giftTransaction.setToUsername(toUsername);
+        giftTransaction.setSessionId(sessionId);
+        giftTransaction.setSessionType(sessionType);
+        giftTransaction.setStatus("COMPLETED");
+        giftTransactionRepository.save(giftTransaction);
 
         // Update viewer level for sender (coins spent)
         userRepository.findByUserId(fromUserId).ifPresent(user -> {

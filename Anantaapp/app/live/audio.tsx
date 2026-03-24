@@ -324,6 +324,8 @@ export default function AudioLiveScreen() {
           fromUserId: senderUserId,
           toUserId: hostUserId,
           giftId: gift.id,
+          sessionId: sessionId,
+          sessionType: 'AUDIO',
         }),
       });
       if (!res.ok) {

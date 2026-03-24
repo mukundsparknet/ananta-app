@@ -345,6 +345,8 @@ export default function VideoLiveScreen() {
           fromUserId: senderUserId,
           toUserId: hostUserId,
           giftId: gift.id,
+          sessionId: sessionId,
+          sessionType: 'VIDEO',
         }),
       });
       if (!res.ok) {
