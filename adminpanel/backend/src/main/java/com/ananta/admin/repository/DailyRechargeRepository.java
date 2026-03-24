@@ -7,4 +7,5 @@ import java.util.List;
 public interface DailyRechargeRepository extends JpaRepository<DailyRecharge, Long> {
     List<DailyRecharge> findByUserId(String userId);
     List<DailyRecharge> findByStatus(DailyRecharge.RechargeStatus status);
+    List<DailyRecharge> findAllByOrderByCreatedAtDesc();
 }

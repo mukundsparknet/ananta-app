@@ -102,6 +102,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 Withdraw Requests
               </Link>
               
+              <Link href="/recharge-history" style={{
+                display:'flex',
+                alignItems:'center',
+                padding:'12px 24px',
+                textDecoration:'none',
+                color: pathname==='/recharge-history' ? '#3182ce' : '#4a5568',
+                background: pathname==='/recharge-history' ? '#ebf8ff' : 'transparent',
+                borderRight: pathname==='/recharge-history' ? '3px solid #3182ce' : '3px solid transparent',
+                fontWeight: pathname==='/recharge-history' ? 600 : 500,
+                fontSize:15
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{marginRight:12}}>
+                  <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                </svg>
+                Recharge History
+              </Link>
+              
               <Link href="/settings" style={{
                 display:'flex',
                 alignItems:'center',

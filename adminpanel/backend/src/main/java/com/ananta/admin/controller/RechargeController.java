@@ -1,7 +1,9 @@
 package com.ananta.admin.controller;
 
 import com.ananta.admin.model.DailyRecharge;
+import com.ananta.admin.model.User;
 import com.ananta.admin.repository.DailyRechargeRepository;
+import com.ananta.admin.repository.UserRepository;
 import com.ananta.admin.repository.WalletRepository;
 import com.ananta.admin.repository.WalletTransactionRepository;
 import com.ananta.admin.model.Wallet;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @CrossOrigin(
         origins = {
@@ -33,11 +36,42 @@ public class RechargeController {
     @Autowired
     WalletTransactionRepository walletTransactionRepository;
 
+    @Autowired
+    UserRepository userRepository;
+
     @GetMapping
     public ResponseEntity<?> getAllRecharges() {
-        List<DailyRecharge> recharges = rechargeRepository.findAll();
+        List<DailyRecharge> recharges = rechargeRepository.findAllByOrderByCreatedAtDesc();
+        
+        // Enrich recharges with username
+        List<Map<String, Object>> enrichedRecharges = recharges.stream().map(recharge -> {
+            Map<String, Object> rechargeMap = new HashMap<>();
+            rechargeMap.put("id", recharge.getId());
+            rechargeMap.put("userId", recharge.getUserId());
+            rechargeMap.put("amount", recharge.getAmount());
+            rechargeMap.put("coins", recharge.getCoins());
+            rechargeMap.put("planName", recharge.getPlanName());
+            rechargeMap.put("status", recharge.getStatus());
+            rechargeMap.put("createdAt", recharge.getCreatedAt());
+            rechargeMap.put("updatedAt", recharge.getUpdatedAt());
+            
+            // Fetch username
+            try {
+                User user = userRepository.findByUserId(recharge.getUserId()).orElse(null);
+                if (user != null) {
+                    rechargeMap.put("username", user.getUsername());
+                } else {
+                    rechargeMap.put("username", "Unknown");
+                }
+            } catch (Exception e) {
+                rechargeMap.put("username", "Unknown");
+            }
+            
+            return rechargeMap;
+        }).collect(Collectors.toList());
+        
         Map<String, Object> response = new HashMap<>();
-        response.put("recharges", recharges);
+        response.put("recharges", enrichedRecharges);
         return ResponseEntity.ok(response);
     }
 
