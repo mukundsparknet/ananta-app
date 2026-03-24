@@ -513,10 +513,6 @@ export default function HomeScreen() {
                   </View>
                 </TouchableOpacity>
               ))}
-              {/* Add empty placeholder if odd number of items in last row */}
-              {rowIndex === Math.ceil(currentList.length / 2) - 1 && currentList.length % 2 === 1 && (
-                <View style={styles.gridCard} />
-              )}
             </View>
           ))}
         </Animated.View>
@@ -696,7 +692,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   gridCard: {
-    flex: 1,
+    width: (width - 55) / 2, // Fixed width: (screen width - padding - gap) / 2
     borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#000',
