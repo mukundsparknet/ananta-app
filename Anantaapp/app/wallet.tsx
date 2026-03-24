@@ -212,6 +212,10 @@ export default function WalletScreen() {
       setWithdrawError('Enter valid amount');
       return;
     }
+    if (amount < 500) {
+      setWithdrawError('Minimum withdrawal amount is ₹500');
+      return;
+    }
     const maxRupees = getMaxWithdrawRupees();
     if (amount > maxRupees) {
       setWithdrawError('Insufficient balance to withdraw');
