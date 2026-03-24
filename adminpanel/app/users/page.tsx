@@ -214,6 +214,22 @@ export default function UsersPage() {
                         Edit
                       </button>
                       <button 
+                        onClick={() => router.push(`/users/${user.userId}/live-history`)}
+                        style={{
+                          padding:'8px 14px',
+                          border:'1px solid #38a169',
+                          borderRadius:6,
+                          cursor:'pointer',
+                          fontSize:13,
+                          fontWeight:600,
+                          background:'white',
+                          color:'#38a169',
+                          transition:'all 0.2s'
+                        }}
+                      >
+                        Live History
+                      </button>
+                      <button 
                         onClick={() => handleDeleteUser(user.userId)}
                         style={{
                           padding:'8px 14px',
