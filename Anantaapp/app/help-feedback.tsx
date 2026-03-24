@@ -44,81 +44,45 @@ export default function HelpFeedbackScreen() {
       </LinearGradient>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.helpSection}>
-          <Text style={[styles.sectionTitle, { color: isDark ? 'white' : '#333' }]}>How can we help you?</Text>
-          
-          {helpItems.map((item) => (
-            <TouchableOpacity 
-              key={item.id} 
-              style={[styles.helpItem, { backgroundColor: isDark ? '#1a1a1a' : 'white' }]}
-            >
-              <View style={styles.helpLeft}>
-                <View style={styles.iconContainer}>
-                  <Ionicons name={item.icon as any} size={24} color={isDark ? '#F7C14D' : '#127d96'} />
-                </View>
-                <View style={styles.textContainer}>
-                  <Text style={[styles.helpTitle, { color: isDark ? 'white' : '#333' }]}>{item.title}</Text>
-                  <Text style={[styles.helpDescription, { color: isDark ? '#ccc' : '#666' }]}>{item.description}</Text>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={isDark ? '#ccc' : '#666'} />
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.feedbackSection}>
-          <Text style={[styles.sectionTitle, { color: isDark ? 'white' : '#333' }]}>Send Feedback</Text>
-          
-          <View style={[styles.feedbackCard, { backgroundColor: isDark ? '#1a1a1a' : 'white' }]}>
-            <Text style={[styles.feedbackLabel, { color: isDark ? '#ccc' : '#666' }]}>
-              We'd love to hear from you! Share your thoughts, suggestions, or report any issues.
-            </Text>
-            
-            <TextInput
-              style={[styles.feedbackInput, { 
-                backgroundColor: isDark ? '#333' : '#f8f9fa',
-                borderColor: isDark ? '#555' : '#e0e0e0',
-                color: isDark ? 'white' : '#333'
-              }]}
-              placeholder="Type your feedback here..."
-              placeholderTextColor={isDark ? '#888' : '#999'}
-              multiline
-              numberOfLines={6}
-              textAlignVertical="top"
-            />
-            
-            <TouchableOpacity style={styles.submitButtonContainer}>
-              <LinearGradient
-                colors={isDark ? ['#F7C14D', '#F7C14D'] : ['#127d96', '#15a3c7']}
-                style={styles.submitButton}
-              >
-                <Ionicons name="send" size={20} color={isDark ? 'black' : 'white'} />
-                <Text style={[styles.submitText, { color: isDark ? 'black' : 'white' }]}>Send Feedback</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* Contact Info */}
         <View style={[styles.contactCard, { backgroundColor: isDark ? '#1a1a1a' : 'white' }]}>
           <View style={styles.contactHeader}>
-            <Ionicons name="mail" size={24} color={isDark ? '#F7C14D' : '#127d96'} />
+            <Ionicons name="mail" size={32} color={isDark ? '#F7C14D' : '#127d96'} />
             <Text style={[styles.contactTitle, { color: isDark ? 'white' : '#333' }]}>Contact Information</Text>
           </View>
           
+          <Text style={[styles.contactDescription, { color: isDark ? '#ccc' : '#666' }]}>
+            Need help? Get in touch with our support team.
+          </Text>
+          
           <View style={styles.contactItem}>
-            <Ionicons name="mail-outline" size={16} color={isDark ? '#ccc' : '#666'} />
-            <Text style={[styles.contactText, { color: isDark ? '#ccc' : '#666' }]}>support@ananta.com</Text>
+            <View style={styles.contactIconContainer}>
+              <Ionicons name="mail" size={20} color={isDark ? '#F7C14D' : '#127d96'} />
+            </View>
+            <View style={styles.contactTextContainer}>
+              <Text style={[styles.contactLabel, { color: isDark ? '#888' : '#999' }]}>Email</Text>
+              <Text style={[styles.contactText, { color: isDark ? 'white' : '#333' }]}>support@anantalive.com</Text>
+            </View>
           </View>
           
           <View style={styles.contactItem}>
-            <Ionicons name="call-outline" size={16} color={isDark ? '#ccc' : '#666'} />
-            <Text style={[styles.contactText, { color: isDark ? '#ccc' : '#666' }]}>+91 98765 43210</Text>
+            <View style={styles.contactIconContainer}>
+              <Ionicons name="call" size={20} color={isDark ? '#F7C14D' : '#127d96'} />
+            </View>
+            <View style={styles.contactTextContainer}>
+              <Text style={[styles.contactLabel, { color: isDark ? '#888' : '#999' }]}>Phone</Text>
+              <Text style={[styles.contactText, { color: isDark ? 'white' : '#333' }]}>9288201327 / 9288164450</Text>
+            </View>
           </View>
           
           <View style={styles.contactItem}>
-            <Ionicons name="time-outline" size={16} color={isDark ? '#ccc' : '#666'} />
-            <Text style={[styles.contactText, { color: isDark ? '#ccc' : '#666' }]}>24/7 Support Available</Text>
+            <View style={styles.contactIconContainer}>
+              <Ionicons name="time" size={20} color={isDark ? '#F7C14D' : '#127d96'} />
+            </View>
+            <View style={styles.contactTextContainer}>
+              <Text style={[styles.contactLabel, { color: isDark ? '#888' : '#999' }]}>Availability</Text>
+              <Text style={[styles.contactText, { color: isDark ? 'white' : '#333' }]}>24/7 Support Available</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -161,123 +125,61 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    paddingTop: 30,
     paddingBottom: height * 0.1,
   },
-  helpSection: {
-    paddingTop: 20,
+  contactCard: {
+    padding: 32,
+    borderRadius: 20,
     marginBottom: 30,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  helpItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  helpLeft: {
+  contactHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    marginBottom: 16,
   },
-  iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  contactTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginLeft: 16,
+  },
+  contactDescription: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 32,
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingVertical: 12,
+  },
+  contactIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: 'rgba(247,193,77,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
-  textContainer: {
+  contactTextContainer: {
     flex: 1,
   },
-  helpTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  contactLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: 4,
   },
-  helpDescription: {
-    fontSize: 14,
-  },
-  feedbackSection: {
-    marginBottom: 30,
-  },
-  feedbackCard: {
-    padding: 24,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  feedbackLabel: {
-    fontSize: 16,
-    marginBottom: 20,
-    lineHeight: 22,
-  },
-  feedbackInput: {
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    borderWidth: 1,
-    minHeight: 120,
-    marginBottom: 20,
-  },
-  submitButtonContainer: {
-    alignSelf: 'stretch',
-  },
-  submitButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderRadius: 25,
-    gap: 10,
-  },
-  submitText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  contactCard: {
-    padding: 24,
-    borderRadius: 16,
-    marginBottom: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  contactHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  contactTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 12,
-  },
-  contactItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
   contactText: {
-    fontSize: 14,
-    marginLeft: 12,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
