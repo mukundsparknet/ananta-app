@@ -337,32 +337,41 @@ export default function SettingsPage() {
             </div>
           </div>
           <div style={{marginBottom:16}}>
-            <label style={{display:'block',marginBottom:4,fontSize:13,color:'#4a5568'}}>Image</label>
+            <label style={{display:'block',marginBottom:4,fontSize:13,color:'#4a5568'}}>Image/Video</label>
             <div style={{display:'flex',alignItems:'center',gap:16}}>
               <div>
                 {editingGift.imageUrl ? (
-                  <img
-                    src={editingGift.imageUrl}
-                    alt={editingGift.name}
-                    style={{width:60,height:60,objectFit:'cover',borderRadius:8,border:'1px solid #e2e8f0'}}
-                  />
+                  editingGift.imageUrl.match(/\.(mp4|mov|avi|webm)$/i) ? (
+                    <video
+                      src={editingGift.imageUrl}
+                      style={{width:60,height:60,objectFit:'cover',borderRadius:8,border:'1px solid #e2e8f0'}}
+                      controls
+                      muted
+                    />
+                  ) : (
+                    <img
+                      src={editingGift.imageUrl}
+                      alt={editingGift.name}
+                      style={{width:60,height:60,objectFit:'cover',borderRadius:8,border:'1px solid #e2e8f0'}}
+                    />
+                  )
                 ) : (
                   <div style={{width:60,height:60,borderRadius:8,border:'1px dashed #cbd5e0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#a0aec0'}}>
-                    No image
+                    No media
                   </div>
                 )}
               </div>
               <div>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,video/*"
                   onChange={e => {
                     const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
                     setGiftImageFile(file);
                   }}
                 />
                 <p style={{margin:0,marginTop:4,fontSize:11,color:'#a0aec0'}}>
-                  JPG, PNG, GIF • Max 30MB
+                  JPG, PNG, GIF, MP4, MOV, AVI • Max 30MB
                 </p>
               </div>
             </div>
@@ -424,9 +433,13 @@ export default function SettingsPage() {
                 </td>
                 <td style={{padding:12,fontSize:14,color:'#2d3748',borderBottom:'1px solid #edf2f7'}}>
                   {gift.imageUrl ? (
-                    <img src={gift.imageUrl} alt={gift.name} style={{width:40,height:40,objectFit:'cover',borderRadius:6}} />
+                    gift.imageUrl.match(/\.(mp4|mov|avi|webm)$/i) ? (
+                      <video src={gift.imageUrl} style={{width:40,height:40,objectFit:'cover',borderRadius:6}} controls muted />
+                    ) : (
+                      <img src={gift.imageUrl} alt={gift.name} style={{width:40,height:40,objectFit:'cover',borderRadius:6}} />
+                    )
                   ) : (
-                    <span style={{color:'#a0aec0',fontSize:12}}>No image</span>
+                    <span style={{color:'#a0aec0',fontSize:12}}>No media</span>
                   )}
                 </td>
                 <td style={{padding:12,fontSize:14,color:gift.active ? '#38a169' : '#e53e3e',borderBottom:'1px solid #edf2f7'}}>
