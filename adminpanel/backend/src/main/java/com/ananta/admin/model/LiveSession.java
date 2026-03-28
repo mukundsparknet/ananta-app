@@ -44,6 +44,11 @@ public class LiveSession {
     @Column(name = "ended_at")
     private LocalDateTime endedAt;
 
+    @ElementCollection
+    @CollectionTable(name = "live_session_mic_users", joinColumns = @JoinColumn(name = "session_id"))
+    @Column(name = "user_id")
+    private java.util.List<String> activeMicUsers = new java.util.ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

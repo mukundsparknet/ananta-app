@@ -2,9 +2,11 @@ package com.ananta.admin.controller;
 
 import com.ananta.admin.model.LiveSession;
 import com.ananta.admin.model.User;
+import com.ananta.admin.model.MicRequest;
 import com.ananta.admin.repository.LiveSessionRepository;
 import com.ananta.admin.repository.UserRepository;
 import com.ananta.admin.repository.FollowRepository;
+import com.ananta.admin.repository.MicRequestRepository;
 import com.ananta.admin.service.AgoraTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +45,9 @@ public class AppLiveController {
 
     @Autowired
     private FollowRepository followRepository;
+
+    @Autowired
+    private MicRequestRepository micRequestRepository;
 
     private static final Map<String, List<Map<String, Object>>> sessionMessages = new ConcurrentHashMap<>();
     private static final Map<String, Set<String>> sessionKickedUsers = new ConcurrentHashMap<>();
@@ -285,6 +290,8 @@ public class AppLiveController {
         session.setEndedAt(LocalDateTime.now());
         liveSessionRepository.save(session);
 
+        // Clean up mic requests and active mic users
+        micRequestRepository.deleteBySessionId(sessionId);
         sessionKickedUsers.remove(sessionId);
         sessionViewers.remove(sessionId);
         return ResponseEntity.ok(Collections.singletonMap("message", "Live ended"));
@@ -500,6 +507,214 @@ public class AppLiveController {
                 return ResponseEntity.ok(Collections.singletonMap("likes", session.getLikes()));
             }
             return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+
+    // Mic Request Endpoints
+    @PostMapping("/mic/request")
+    @Transactional
+    public ResponseEntity<?> requestMic(@RequestBody Map<String, Object> payload) {
+        String sessionId = asString(payload.get("sessionId"));
+        String requesterUserId = asString(payload.get("userId"));
+        
+        if (!StringUtils.hasText(sessionId) || !StringUtils.hasText(requesterUserId)) {
+            return ResponseEntity.badRequest().body(Collections.singletonMap("message", "sessionId and userId are required"));
+        }
+        
+        try {
+            LiveSession session = liveSessionRepository.findBySessionId(sessionId)
+                    .orElseThrow(() -> new RuntimeException("Live session not found"));
+            
+            if (!"LIVE".equalsIgnoreCase(session.getStatus())) {
+                return ResponseEntity.badRequest().body(Collections.singletonMap("message", "Live session is not active"));
+            }
+            
+            // Check if user already has an active request
+            Optional<MicRequest> existingRequest = micRequestRepository.findBySessionIdAndRequesterUserId(sessionId, requesterUserId);
+            if (existingRequest.isPresent() && "PENDING".equals(existingRequest.get().getStatus())) {
+                return ResponseEntity.badRequest().body(Collections.singletonMap("message", "You already have a pending mic request"));
+            }
+            
+            // Check if user is already on mic
+            if (session.getActiveMicUsers() != null && session.getActiveMicUsers().contains(requesterUserId)) {
+                return ResponseEntity.badRequest().body(Collections.singletonMap("message", "You are already on mic"));
+            }
+            
+            // Create new mic request
+            MicRequest micRequest = new MicRequest();
+            micRequest.setSessionId(sessionId);
+            micRequest.setRequesterUserId(requesterUserId);
+            micRequest.setHostUserId(session.getHostUserId());
+            micRequest.setStatus("PENDING");
+            micRequestRepository.save(micRequest);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Mic request sent");
+            response.put("requestId", micRequest.getId());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/mic/requests/{sessionId}")
+    public ResponseEntity<?> getMicRequests(@PathVariable String sessionId) {
+        if (!StringUtils.hasText(sessionId)) {
+            return ResponseEntity.badRequest().body(Collections.singletonMap("message", "sessionId is required"));
+        }
+        
+        try {
+            List<MicRequest> requests = micRequestRepository.findBySessionIdAndStatus(sessionId, "PENDING");
+            List<Map<String, Object>> requestList = new ArrayList<>();
+            
+            for (MicRequest request : requests) {
+                Map<String, Object> requestData = new HashMap<>();
+                requestData.put("id", request.getId());
+                requestData.put("requesterUserId", request.getRequesterUserId());
+                requestData.put("createdAt", request.getCreatedAt());
+                
+                // Add requester user info
+                Optional<User> requesterOpt = userRepository.findByUserId(request.getRequesterUserId());
+                requesterOpt.ifPresent(user -> {
+                    requestData.put("requesterUsername", user.getUsername());
+                    requestData.put("requesterProfileImage", user.getProfileImage());
+                });
+                
+                requestList.add(requestData);
+            }
+            
+            return ResponseEntity.ok(requestList);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    @PostMapping("/mic/respond")
+    @Transactional
+    public ResponseEntity<?> respondToMicRequest(@RequestBody Map<String, Object> payload) {
+        String sessionId = asString(payload.get("sessionId"));
+        String hostUserId = asString(payload.get("hostUserId"));
+        Long requestId = payload.get("requestId") != null ? Long.valueOf(payload.get("requestId").toString()) : null;
+        String action = asString(payload.get("action")); // "accept" or "reject"
+        
+        if (!StringUtils.hasText(sessionId) || !StringUtils.hasText(hostUserId) || requestId == null || !StringUtils.hasText(action)) {
+            return ResponseEntity.badRequest().body(Collections.singletonMap("message", "sessionId, hostUserId, requestId and action are required"));
+        }
+        
+        try {
+            LiveSession session = liveSessionRepository.findBySessionId(sessionId)
+                    .orElseThrow(() -> new RuntimeException("Live session not found"));
+            
+            if (!hostUserId.equals(session.getHostUserId())) {
+                return ResponseEntity.status(403).body(Collections.singletonMap("message", "Only host can respond to mic requests"));
+            }
+            
+            MicRequest micRequest = micRequestRepository.findById(requestId)
+                    .orElseThrow(() -> new RuntimeException("Mic request not found"));
+            
+            if (!"PENDING".equals(micRequest.getStatus())) {
+                return ResponseEntity.badRequest().body(Collections.singletonMap("message", "Request is no longer pending"));
+            }
+            
+            if ("accept".equalsIgnoreCase(action)) {
+                micRequest.setStatus("ACCEPTED");
+                
+                // Add user to active mic users
+                if (session.getActiveMicUsers() == null) {
+                    session.setActiveMicUsers(new ArrayList<>());
+                }
+                if (!session.getActiveMicUsers().contains(micRequest.getRequesterUserId())) {
+                    session.getActiveMicUsers().add(micRequest.getRequesterUserId());
+                }
+                
+                liveSessionRepository.save(session);
+                
+            } else if ("reject".equalsIgnoreCase(action)) {
+                micRequest.setStatus("REJECTED");
+            } else {
+                return ResponseEntity.badRequest().body(Collections.singletonMap("message", "Invalid action. Use 'accept' or 'reject'"));
+            }
+            
+            micRequestRepository.save(micRequest);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Request " + action + "ed successfully");
+            response.put("activeMicUsers", session.getActiveMicUsers());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    @PostMapping("/mic/remove")
+    @Transactional
+    public ResponseEntity<?> removeFromMic(@RequestBody Map<String, Object> payload) {
+        String sessionId = asString(payload.get("sessionId"));
+        String hostUserId = asString(payload.get("hostUserId"));
+        String targetUserId = asString(payload.get("targetUserId"));
+        
+        if (!StringUtils.hasText(sessionId) || !StringUtils.hasText(hostUserId) || !StringUtils.hasText(targetUserId)) {
+            return ResponseEntity.badRequest().body(Collections.singletonMap("message", "sessionId, hostUserId and targetUserId are required"));
+        }
+        
+        try {
+            LiveSession session = liveSessionRepository.findBySessionId(sessionId)
+                    .orElseThrow(() -> new RuntimeException("Live session not found"));
+            
+            if (!hostUserId.equals(session.getHostUserId())) {
+                return ResponseEntity.status(403).body(Collections.singletonMap("message", "Only host can remove users from mic"));
+            }
+            
+            // Remove user from active mic users
+            if (session.getActiveMicUsers() != null) {
+                session.getActiveMicUsers().remove(targetUserId);
+                liveSessionRepository.save(session);
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "User removed from mic");
+            response.put("activeMicUsers", session.getActiveMicUsers());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/mic/active/{sessionId}")
+    public ResponseEntity<?> getActiveMicUsers(@PathVariable String sessionId) {
+        if (!StringUtils.hasText(sessionId)) {
+            return ResponseEntity.badRequest().body(Collections.singletonMap("message", "sessionId is required"));
+        }
+        
+        try {
+            LiveSession session = liveSessionRepository.findBySessionId(sessionId)
+                    .orElseThrow(() -> new RuntimeException("Live session not found"));
+            
+            List<Map<String, Object>> activeMicUsers = new ArrayList<>();
+            
+            if (session.getActiveMicUsers() != null) {
+                for (String userId : session.getActiveMicUsers()) {
+                    Map<String, Object> userData = new HashMap<>();
+                    userData.put("userId", userId);
+                    
+                    Optional<User> userOpt = userRepository.findByUserId(userId);
+                    userOpt.ifPresent(user -> {
+                        userData.put("username", user.getUsername());
+                        userData.put("profileImage", user.getProfileImage());
+                    });
+                    
+                    activeMicUsers.add(userData);
+                }
+            }
+            
+            return ResponseEntity.ok(activeMicUsers);
+            
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Collections.singletonMap("error", e.getMessage()));
         }

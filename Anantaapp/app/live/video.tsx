@@ -59,6 +59,11 @@ export default function VideoLiveScreen() {
   const [viewerSearch, setViewerSearch] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isRoomAdmin, setIsRoomAdmin] = useState(false);
+  const [micRequests, setMicRequests] = useState<any[]>([]);
+  const [activeMicUsers, setActiveMicUsers] = useState<any[]>([]);
+  const [showMicRequests, setShowMicRequests] = useState(false);
+  const [showActiveMicUsers, setShowActiveMicUsers] = useState(false);
+  const [hasPendingMicRequest, setHasPendingMicRequest] = useState(false);
 
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', e => setKeyboardHeight(e.endCoordinates.height));
@@ -736,6 +741,12 @@ export default function VideoLiveScreen() {
         }
       }
     } catch { }
+    
+    // Load mic requests and active mic users
+    if (role === 'host') {
+      loadMicRequests();
+    }
+    loadActiveMicUsers();
   };
 
   const loadMessages = async () => {
@@ -854,6 +865,78 @@ export default function VideoLiveScreen() {
     }
   };
   endLiveRef.current = endLive;
+
+  // Mic Request Functions
+  const requestMic = async () => {
+    if (role !== 'viewer' || !sessionId || !userId) return;
+    try {
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/live/mic/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, userId }),
+      });
+      if (res.ok) {
+        setHasPendingMicRequest(true);
+        Alert.alert('Request Sent', 'Your mic request has been sent to the host.');
+      } else {
+        const data = await res.json();
+        Alert.alert('Error', data.message || 'Failed to send mic request');
+      }
+    } catch {
+      Alert.alert('Error', 'Failed to send mic request');
+    }
+  };
+
+  const loadMicRequests = async () => {
+    if (!sessionId) return;
+    try {
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/live/mic/requests/${sessionId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMicRequests(Array.isArray(data) ? data : []);
+      }
+    } catch {}
+  };
+
+  const loadActiveMicUsers = async () => {
+    if (!sessionId) return;
+    try {
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/live/mic/active/${sessionId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setActiveMicUsers(Array.isArray(data) ? data : []);
+      }
+    } catch {}
+  };
+
+  const respondToMicRequest = async (requestId: number, action: 'accept' | 'reject') => {
+    if (role !== 'host' || !sessionId || !userId) return;
+    try {
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/live/mic/respond`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, hostUserId: userId, requestId, action }),
+      });
+      if (res.ok) {
+        loadMicRequests();
+        loadActiveMicUsers();
+      }
+    } catch {}
+  };
+
+  const removeFromMic = async (targetUserId: string) => {
+    if (role !== 'host' || !sessionId || !userId) return;
+    try {
+      const res = await fetch(`${ENV.API_BASE_URL}/api/app/live/mic/remove`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, hostUserId: userId, targetUserId }),
+      });
+      if (res.ok) {
+        loadActiveMicUsers();
+      }
+    } catch {}
+  };
 
   useEffect(() => {
     if (Platform.OS !== 'android') return;
@@ -1025,6 +1108,25 @@ export default function VideoLiveScreen() {
                 <TouchableOpacity style={styles.actionButton} onPress={() => { setViewerSearch(''); loadViewers(); setShowViewers(true); }}>
                   <ThemedText style={styles.actionIcon}>👥</ThemedText>
                 </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.actionButton, micRequests.length > 0 && { backgroundColor: 'rgba(255,215,0,0.3)' }]} 
+                  onPress={() => { loadMicRequests(); setShowMicRequests(true); }}
+                >
+                  <ThemedText style={[styles.actionIcon, { color: micRequests.length > 0 ? '#FFD700' : 'white' }]}>🎤</ThemedText>
+                  {micRequests.length > 0 && (
+                    <View style={styles.notificationBadge}>
+                      <Text style={styles.notificationText}>{micRequests.length}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+                {activeMicUsers.length > 0 && (
+                  <TouchableOpacity style={styles.actionButton} onPress={() => setShowActiveMicUsers(true)}>
+                    <ThemedText style={styles.actionIcon}>🎙️</ThemedText>
+                    <View style={styles.notificationBadge}>
+                      <Text style={styles.notificationText}>{activeMicUsers.length}</Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity style={styles.actionButton} onPress={endLive}>
                   <ThemedText style={styles.actionIcon}>⏹</ThemedText>
                 </TouchableOpacity>
@@ -1036,6 +1138,13 @@ export default function VideoLiveScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.actionButton} onPress={toggleHostMute}>
                   <ThemedText style={styles.actionIcon}>{isHostMuted ? '🔇' : '🔊'}</ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.actionButton, hasPendingMicRequest && { backgroundColor: 'rgba(255,215,0,0.3)' }]} 
+                  onPress={requestMic}
+                  disabled={hasPendingMicRequest}
+                >
+                  <ThemedText style={[styles.actionIcon, { color: hasPendingMicRequest ? '#FFD700' : 'white' }]}>🎤</ThemedText>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.actionButton} onPress={handleGift}>
                   <ThemedText style={[styles.actionIcon, { color: '#ffd93d' }]}>🎁</ThemedText>
@@ -1079,6 +1188,101 @@ export default function VideoLiveScreen() {
             onComplete={() => setVideoGift(null)}
           />
         )}
+
+        {/* Mic Requests Modal */}
+        <Modal visible={showMicRequests} transparent animationType="slide" onRequestClose={() => setShowMicRequests(false)}>
+          <View style={styles.giftModalOverlay}>
+            <View style={[styles.giftModalContainer, { paddingBottom: 20, marginBottom: keyboardHeight }]}>
+              <View style={styles.giftModalHeader}>
+                <Text style={styles.giftModalTitle}>Mic Requests ({micRequests.length})</Text>
+                <TouchableOpacity onPress={() => setShowMicRequests(false)}>
+                  <Text style={styles.giftModalClose}>×</Text>
+                </TouchableOpacity>
+              </View>
+              {micRequests.length === 0 ? (
+                <Text style={[styles.giftLoadingText, { paddingVertical: 20, textAlign: 'center' }]}>
+                  No pending mic requests
+                </Text>
+              ) : (
+                <FlatList
+                  data={micRequests}
+                  keyExtractor={item => item.id.toString()}
+                  style={{ maxHeight: 400 }}
+                  renderItem={({ item }) => (
+                    <View style={styles.micRequestRow}>
+                      <Image
+                        source={{ uri: resolveProfileImageUrl(item.requesterProfileImage) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50' }}
+                        style={styles.viewerAvatar}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.viewerName}>@{item.requesterUsername || item.requesterUserId}</Text>
+                        <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>Wants to join mic</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.acceptBtn}
+                        onPress={() => respondToMicRequest(item.id, 'accept')}
+                      >
+                        <Text style={styles.acceptBtnText}>Accept</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.rejectBtn}
+                        onPress={() => respondToMicRequest(item.id, 'reject')}
+                      >
+                        <Text style={styles.rejectBtnText}>Reject</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                />
+              )}
+            </View>
+          </View>
+        </Modal>
+
+        {/* Active Mic Users Modal */}
+        <Modal visible={showActiveMicUsers} transparent animationType="slide" onRequestClose={() => setShowActiveMicUsers(false)}>
+          <View style={styles.giftModalOverlay}>
+            <View style={[styles.giftModalContainer, { paddingBottom: 20, marginBottom: keyboardHeight }]}>
+              <View style={styles.giftModalHeader}>
+                <Text style={styles.giftModalTitle}>On Mic ({activeMicUsers.length})</Text>
+                <TouchableOpacity onPress={() => setShowActiveMicUsers(false)}>
+                  <Text style={styles.giftModalClose}>×</Text>
+                </TouchableOpacity>
+              </View>
+              {activeMicUsers.length === 0 ? (
+                <Text style={[styles.giftLoadingText, { paddingVertical: 20, textAlign: 'center' }]}>
+                  No users on mic
+                </Text>
+              ) : (
+                <FlatList
+                  data={activeMicUsers}
+                  keyExtractor={item => item.userId}
+                  style={{ maxHeight: 400 }}
+                  renderItem={({ item }) => (
+                    <View style={styles.micUserRow}>
+                      <Image
+                        source={{ uri: resolveProfileImageUrl(item.profileImage) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50' }}
+                        style={styles.viewerAvatar}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.viewerName}>@{item.username || item.userId}</Text>
+                        <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>On mic</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.removeMicBtn}
+                        onPress={() => Alert.alert('Remove from Mic', `Remove ${item.username} from mic?`, [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Remove', style: 'destructive', onPress: () => removeFromMic(item.userId) },
+                        ])}
+                      >
+                        <Text style={styles.removeMicBtnText}>Remove</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                />
+              )}
+            </View>
+          </View>
+        </Modal>
 
         <Modal visible={showViewers} transparent animationType="slide" onRequestClose={() => setShowViewers(false)}>
           <View style={styles.giftModalOverlay}>
@@ -1686,6 +1890,70 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   banBtnText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#ff4444',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notificationText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  micRequestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  micUserRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  acceptBtn: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  acceptBtnText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  rejectBtn: {
+    backgroundColor: '#f44336',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  rejectBtnText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  removeMicBtn: {
+    backgroundColor: '#ff9800',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  removeMicBtnText: {
     color: 'white',
     fontSize: 12,
     fontWeight: '700',
