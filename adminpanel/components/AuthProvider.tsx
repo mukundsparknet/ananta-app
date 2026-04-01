@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     if (token) {
       // Verify token with backend
-      fetch('https://ecofuelglobal.com/api/admin/verify-token', {
+      fetch('https://anantalive.com/api/admin/verify-token', {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(res => {
