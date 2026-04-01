@@ -1,6 +1,8 @@
 'use client';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { AuthProvider } from '../components/AuthProvider';
+import { ProtectedRoute } from '../components/ProtectedRoute';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -9,7 +11,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
       <html lang="en">
         <body style={{margin:0,fontFamily:'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',background:'#f7f8fc'}}>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </body>
       </html>
     );
@@ -18,56 +22,77 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body style={{margin:0,fontFamily:'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',background:'#f7f8fc'}}>
-        {/* Fixed Top Header */}
+        <AuthProvider>
+          <ProtectedRoute>
+            <AdminLayout>{children}</AdminLayout>
+          </ProtectedRoute>
+        </AuthProvider>
+      </body>
+    </html>
+  );
+}
+
+function AdminLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  const handleSignOut = () => {
+    localStorage.removeItem('token');
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+    window.location.href = '/login';
+  };
+
+  return (
+    <>
+      {/* Fixed Top Header */}
+      <div style={{
+        position:'fixed',
+        top:0,
+        left:0,
+        right:0,
+        background:'#1a202c',
+        color:'white',
+        padding:'0 32px',
+        height:72,
+        display:'flex',
+        alignItems:'center',
+        justifyContent:'space-between',
+        boxShadow:'0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        zIndex:1000
+      }}>
+        <div style={{display:'flex',alignItems:'center'}}>
+          <div style={{width:40,height:40,background:'linear-gradient(135deg, #4299e1, #3182ce)',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',marginRight:16,fontWeight:'bold',fontSize:18}}>A</div>
+          <div>
+            <h1 style={{margin:0,fontSize:20,fontWeight:600}}>ANANTA</h1>
+            <p style={{margin:0,fontSize:12,opacity:0.7}}>Administration Panel</p>
+          </div>
+        </div>
+        <button 
+          onClick={handleSignOut}
+          style={{padding:'10px 20px',background:'#2d3748',color:'white',border:'1px solid #4a5568',borderRadius:6,cursor:'pointer',fontWeight:500,fontSize:14}}
+        >
+          Sign Out
+        </button>
+      </div>
+
+      <div style={{display:'flex',paddingTop:72}}>
+        {/* Fixed Sidebar */}
         <div style={{
           position:'fixed',
-          top:0,
+          top:72,
           left:0,
-          right:0,
-          background:'#1a202c',
-          color:'white',
-          padding:'0 32px',
-          height:72,
-          display:'flex',
-          alignItems:'center',
-          justifyContent:'space-between',
-          boxShadow:'0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          zIndex:1000
+          width:280,
+          height:'calc(100vh - 72px)',
+          background:'white',
+          borderRight:'1px solid #e2e8f0',
+          padding:'24px 0',
+          overflowY:'auto',
+          zIndex:999
         }}>
-          <div style={{display:'flex',alignItems:'center'}}>
-            <div style={{width:40,height:40,background:'linear-gradient(135deg, #4299e1, #3182ce)',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',marginRight:16,fontWeight:'bold',fontSize:18}}>A</div>
-            <div>
-              <h1 style={{margin:0,fontSize:20,fontWeight:600}}>ANANTA</h1>
-              <p style={{margin:0,fontSize:12,opacity:0.7}}>Administration Panel</p>
-            </div>
+          <div style={{padding:'0 24px',marginBottom:32}}>
+            <h3 style={{margin:0,fontSize:14,fontWeight:600,color:'#4a5568',textTransform:'uppercase',letterSpacing:'0.05em'}}>Management</h3>
           </div>
-          <button 
-            onClick={()=>{localStorage.removeItem('token');window.location.href='/login'}} 
-            style={{padding:'10px 20px',background:'#2d3748',color:'white',border:'1px solid #4a5568',borderRadius:6,cursor:'pointer',fontWeight:500,fontSize:14}}
-          >
-            Sign Out
-          </button>
-        </div>
-
-        <div style={{display:'flex',paddingTop:72}}>
-          {/* Fixed Sidebar */}
-          <div style={{
-            position:'fixed',
-            top:72,
-            left:0,
-            width:280,
-            height:'calc(100vh - 72px)',
-            background:'white',
-            borderRight:'1px solid #e2e8f0',
-            padding:'24px 0',
-            overflowY:'auto',
-            zIndex:999
-          }}>
-            <div style={{padding:'0 24px',marginBottom:32}}>
-              <h3 style={{margin:0,fontSize:14,fontWeight:600,color:'#4a5568',textTransform:'uppercase',letterSpacing:'0.05em'}}>Management</h3>
-            </div>
-            
-            <nav>
+          
+          <nav>
               <Link href="/users" style={{
                 display:'flex',
                 alignItems:'center',
@@ -274,15 +299,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </svg>
                 User Reports
               </Link>
-            </nav>
-          </div>
-
-          {/* Main Content with left margin for sidebar */}
-          <div style={{marginLeft:280,flex:1,padding:32,background:'#f7f8fc',minHeight:'calc(100vh - 72px)'}}>
-            {children}
-          </div>
+          </nav>
         </div>
-      </body>
-    </html>
+
+        {/* Main Content with left margin for sidebar */}
+        <div style={{marginLeft:280,flex:1,padding:32,background:'#f7f8fc',minHeight:'calc(100vh - 72px)'}}>
+          {children}
+        </div>
+      </div>
+    </>
   );
 }

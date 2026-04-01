@@ -1,5 +1,7 @@
 'use client';
 import { useState } from 'react';
+import { useAuth } from '../../components/AuthProvider';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
 export default function LoginPage() {
@@ -8,6 +10,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { login } = useAuth();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,9 +19,9 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await axios.post('/api/admin/login', { email, password });
-      localStorage.setItem('token', response.data.token);
-      window.location.href = '/users';
+      const response = await axios.post('https://ecofuelglobal.com/api/admin/login', { email, password });
+      login(response.data.token);
+      router.push('/users');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
     } finally {
