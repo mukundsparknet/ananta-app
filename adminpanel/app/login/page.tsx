@@ -19,11 +19,32 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await axios.post('https://admin.anantalive.com/api/admin/login', { email, password });
-      login(response.data.token);
-      router.push('/users');
+      console.log('Attempting login...');
+      const response = await axios.post('https://admin.anantalive.com/api/admin/login', 
+        { email, password },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          withCredentials: true
+        }
+      );
+      
+      console.log('Login response:', response.data);
+      
+      if (response.data && response.data.token) {
+        console.log('Token received, calling login function...');
+        login(response.data.token);
+        
+        console.log('Redirecting to /users...');
+        // Force redirect using window.location for immediate effect
+        window.location.href = '/users';
+      } else {
+        setError('Invalid response from server');
+      }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+      console.error('Login error:', err);
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }

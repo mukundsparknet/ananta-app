@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = {"http://localhost:8081","http://localhost:19006","http://localhost:3000","http://ecofuelglobal.com","https://ecofuelglobal.com", "http://anantalive.com", "https://anantalive.com", "http://anantalive.com", "https://anantalive.com"}, maxAge = 3600)
+@CrossOrigin(origins = {"http://localhost:8081","http://localhost:19006","http://localhost:3000","http://ecofuelglobal.com","https://ecofuelglobal.com", "http://admin.anantalive.com", "https://admin.anantalive.com"}, maxAge = 3600)
 @RestController
 public class UserReportController {
 

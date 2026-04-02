@@ -20,7 +20,10 @@ import org.springframework.web.bind.annotation.*;
         origins = {
                 "http://localhost:8081",
                 "http://localhost:19006",
-                "http://localhost:3000"
+                "http://localhost:3000",
+                "http://localhost:3011",
+                "http://admin.anantalive.com",
+                "https://admin.anantalive.com"
         },
         maxAge = 3600
 )

@@ -24,8 +24,8 @@ import java.util.stream.Collectors;
                 "http://localhost:3000",
                 "https://ecofuelglobal.com",
                 "http://ecofuelglobal.com",
-                "http://anantalive.com",
-                "https://anantalive.com"
+                "http://admin.anantalive.com",
+                "https://admin.anantalive.com"
         },
         allowedHeaders = "*",
         maxAge = 3600

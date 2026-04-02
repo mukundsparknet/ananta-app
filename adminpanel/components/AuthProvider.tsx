@@ -22,21 +22,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     if (token) {
       // Verify token with backend
-      fetch('https://anantalive.com/api/admin/verify-token', {
-        headers: { Authorization: `Bearer ${token}` }
+      fetch('https://admin.anantalive.com/api/admin/verify-token', {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       })
       .then(res => {
         if (res.ok) {
           setIsAuthenticated(true);
+          // If user is on login page and authenticated, redirect to users
+          if (pathname === '/login') {
+            router.push('/users');
+          }
         } else {
           localStorage.removeItem('token');
+          document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+          setIsAuthenticated(false);
           if (pathname !== '/login') {
             router.push('/login');
           }
         }
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Token verification failed:', error);
         localStorage.removeItem('token');
+        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
+        setIsAuthenticated(false);
         if (pathname !== '/login') {
           router.push('/login');
         }
@@ -44,6 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
     } else {
       setIsLoading(false);
+      setIsAuthenticated(false);
       if (pathname !== '/login') {
         router.push('/login');
       }
@@ -51,9 +64,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [pathname, router]);
 
   const login = (token: string) => {
+    console.log('AuthProvider: Setting token and authentication state');
     localStorage.setItem('token', token);
-    document.cookie = `token=${token}; path=/; max-age=86400`; // 24 hours
+    // Set cookie without domain (will use current domain)
+    document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Lax; Secure`;
     setIsAuthenticated(true);
+    setIsLoading(false);
   };
 
   const logout = () => {

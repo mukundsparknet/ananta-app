@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = {"http://localhost:8081", "http://localhost:19006", "http://localhost:3000", "https://ecofuelglobal.com", "http://anantalive.com", "https://anantalive.com"}, maxAge = 3600)
+@CrossOrigin(origins = {"http://localhost:8081", "http://localhost:19006", "http://localhost:3000", "https://ecofuelglobal.com", "http://admin.anantalive.com", "https://admin.anantalive.com"}, maxAge = 3600)
 @RestController
 @RequestMapping("/api/app/referral")
 public class AppReferralController {

@@ -8,12 +8,15 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    console.log('ProtectedRoute: isLoading=', isLoading, 'isAuthenticated=', isAuthenticated);
     if (!isLoading && !isAuthenticated) {
+      console.log('ProtectedRoute: Redirecting to login');
       router.push('/login');
     }
   }, [isAuthenticated, isLoading, router]);
 
   if (isLoading) {
+    console.log('ProtectedRoute: Showing loading screen');
     return (
       <div style={{
         display: 'flex',
@@ -50,8 +53,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
+    console.log('ProtectedRoute: Not authenticated, returning null');
     return null;
   }
 
+  console.log('ProtectedRoute: Authenticated, rendering children');
   return <>{children}</>;
 }
