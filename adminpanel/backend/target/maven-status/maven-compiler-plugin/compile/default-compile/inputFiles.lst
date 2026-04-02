@@ -1,64 +1,89 @@
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AdminWalletSettingsController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\config\JwtUtils.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\WalletTransaction.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\OtpVerifyResponse.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\KYCController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AdminHeroController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\HeroItem.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\KycStatusResponse.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\User.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\KYCRepository.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AppWalletController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\OtpVerifyRequest.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\WithdrawConfig.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\ChatThreadRepository.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\RechargeController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\service\AgoraTokenService.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\ChatThread.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\RechargePlanRepository.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\config\AgoraConfig.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\config\DataInitializer.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\LiveSessionRepository.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\Admin.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\JwtResponse.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\LiveSession.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\WalletRepository.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\DailyRecharge.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\RechargePlan.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\Gift.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\LoginRequest.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\WithdrawConfigRepository.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\GiftRepository.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\WithdrawRequestRepository.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\config\JwtAuthEntryPoint.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AppUserController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\Follow.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\AnantaAdminApplication.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AppLiveController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\RegisterRequest.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AdminUserManagementController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\ChatMessage.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\KYC.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\service\UserDetailsServiceImpl.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\UserRepository.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\HeroItemRepository.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\UpdateProfileRequest.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\MessageResponse.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\AdminRepository.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\config\SecurityConfig.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\config\GlobalExceptionHandler.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AppHeroController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AdminKYCManagementController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\Wallet.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\config\AuthTokenFilter.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AuthController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\WithdrawController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AppMessageController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\DailyRechargeRepository.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\WalletTransactionRepository.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\ChatMessageRepository.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AdminGiftController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AppGiftController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\UserController.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\FollowRepository.java
-D:\Office\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\WithdrawRequest.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\WithdrawRequestRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\config\SecurityConfig.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\WithdrawRequest.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\service\UserDetailsServiceImpl.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\RegisterRequest.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AuthController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\Follow.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\UserReport.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\ViewerLevel.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AppLiveController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\UserReportController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AppHeroController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\HostTaskRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\service\AgoraTokenService.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AppReferralController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\ChatThread.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\RechargeController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\DailyRechargeRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AdminReferralController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\OtpVerifyRequest.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AppUserController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\KYCController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\UpdateProfileRequest.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\ViewerTask.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\LiveSessionRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\WithdrawConfigRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AppMessageController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\HostLevelRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AdminDailyTaskController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\MessageResponse.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\FollowRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\DailyRecharge.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\OtpVerifyResponse.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\GiftRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AdminGiftController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\RechargePlanRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\config\JwtAuthEntryPoint.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AdminHeroController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\HeroItem.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AdminKYCManagementController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AdminWalletSettingsController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AdminLevelManagementController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AdminGiftHistoryController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\LoginRequest.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\ReferralTierRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\WalletTransaction.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\RechargePlan.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\GiftTransactionRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\Admin.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\UserReportRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\HostTask.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\ReferralTier.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\config\DataInitializer.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\HeroItemRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\AdminRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\Wallet.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\config\AgoraConfig.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\UserRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\LiveSession.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\GiftTransaction.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\KYC.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\ChatMessageRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\WithdrawController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\UserTaskProgressRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\WalletRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\Gift.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\ViewerLevelRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\UserController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AppGiftController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\AppSettingsRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\ChatThreadRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AdminUserManagementController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\UserTaskProgress.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\HostLevel.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\KycStatusResponse.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\User.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\WithdrawConfig.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\config\AuthTokenFilter.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AppWalletController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\ChatMessage.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\controller\AdminAppSettingsController.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\config\JwtUtils.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\payload\JwtResponse.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\KYCRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\AnantaAdminApplication.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\WalletTransactionRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\config\GlobalExceptionHandler.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\repository\ViewerTaskRepository.java
+D:\New folder\ANANTA-APP\adminpanel\backend\src\main\java\com\ananta\admin\model\AppSettings.java

@@ -1,7 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { useAuth } from '../../components/AuthProvider';
-import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
 export default function LoginPage() {
@@ -10,8 +8,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useAuth();
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,27 +15,11 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await axios.post('https://admin.anantalive.com/api/admin/login', 
-        { email, password },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
-      if (response.data && response.data.token) {
-        // Store token
-        localStorage.setItem('token', response.data.token);
-        document.cookie = `token=${response.data.token}; path=/; max-age=86400`;
-        
-        // Simple redirect
-        window.location.href = '/users';
-      } else {
-        setError('Login failed');
-      }
+      const response = await axios.post('/api/admin/login', { email, password });
+      localStorage.setItem('token', response.data.token);
+      window.location.href = '/users';
     } catch (err: any) {
-      setError('Login failed. Please check your credentials.');
+      setError(err.response?.data?.message || 'Login failed');
     } finally {
       setLoading(false);
     }
