@@ -2,7 +2,7 @@
   "expo": {
     "name": "Ananta",
     "slug": "ananta",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/app-logo.png",
     "scheme": "com.techvivek32.ananta",
@@ -16,6 +16,7 @@
       }
     },
     "android": {
+      "versionCode": 2,
       "icon": "./assets/images/app-logo.png",
       "adaptiveIcon": {
         "backgroundColor": "#127d96",
